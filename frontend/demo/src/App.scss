@@ -1,0 +1,28 @@
+.container {
+  display: grid;
+  grid-template-columns: 0.1fr 2fr;  // Divides the screen into 1/3 and 2/3
+  height: 100vh;  // Full viewport height
+  width: 100vw;  // Full viewport width, ensuring it covers the full screen
+
+  // Style for the divisions
+  > div {
+    border: 1px solid black; // Adds border around each division
+    display: flex;
+    flex-direction: column;
+    justify-content: center; // Center content vertically
+    align-items: center; // Center content horizontally
+    padding: 20px; // Padding within each division
+  }
+}
+
+.sidebar {
+}
+
+
+.content {
+  // Ensure content area takes the remaining space effectively
+  width: 100%;  // Takes the full width of its grid column
+  overflow-y: auto;  // Allows scrolling if content is taller than the screen
+  align-items: flex-start; // Aligns content at the top
+  justify-content: flex-start;
+}
