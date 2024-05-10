@@ -1,41 +1,36 @@
-import React, { useState } from 'react';
-import { Page, Heading, Button, Flex, Divider } from '@oliasoft-open-source/react-ui-library';
-import ResultTable from './ResultTable';
+import React, { useState, useRef } from 'react';
+import { Page, Heading, Button, Flex, Divider, Tabs } from '@oliasoft-open-source/react-ui-library';
+import TableBHA from './TableBHA';
 
 function Main2() {
-    const [number1, setNumber1] = useState('');
-    const [number2, setNumber2] = useState('');
-    const [result, setResult] = useState(null);
+    const [selectedTab, setSelectedTab] = useState({ label: 'Tab', value: 0 }); // Updated state
 
-    const handleSubmit = async () => {
-        const response = await fetch('http://localhost:3001/multiply', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ number1: Number(number1), number2: Number(number2) }),
-        });
-        const data = await response.json();
-        setResult(data.result);
-    };
 
     return (
-
         <Page>
-        <Heading top>AI Parser for Tables</Heading>
-  
-        <ResultTable />
-        <Divider />
-
-        <Flex gap="var(--padding-sm)">
-            <Button label="Upload File" />
-            <Button
-                colored
-                label="Execute AI Magic"
+            <Heading top>AI Parser for Tables</Heading>
+            <Tabs
+                name="example"
+                value={selectedTab.value}
+                options={[
+                    { label: 'BHA', value: 0 },
+                    { label: 'Pore Pressure file', value: 1 },
+                    { label: 'Pore Pressure image', value: 2 },
+                    { label: 'Invalid', value: 3 },
+                    { label: 'Disabled', value: 4 }
+                ]}
+                onChange={(evt) => {
+                    const { value, label } = evt.target; // Assuming evt.target correctly contains these
+                    setSelectedTab({ value, label });
+                }}
             />
-        </Flex>
-
-
+            <div>
+                {selectedTab.value === 0 && <TableBHA />}
+                {selectedTab.value === 1 && <div><h3>Tab 1 Content</h3></div>}
+                {selectedTab.value === 2 && <div><h3>Tab 2 Content</h3></div>}
+                {selectedTab.value === 3 && <div><h3>Tab 3 Content</h3></div>}
+                {selectedTab.value === 4 && <div><h3>Disabled Content</h3></div>}
+            </div>
         </Page>
     );
 }

@@ -18,12 +18,15 @@ function Nav() {
                     {
                         heading: 'Demos',
                         items: [
-                            { label: 'AI Tables', value: 'item1', icon: <Icon icon="key" size={20}/>, onClick: () => navigateTo('/') },
-                            { label: 'Item 2', value: 'item2', icon: <Icon icon="star" size={20}/>, onClick: () => navigateTo('/main2') },
+                            { label: 'Test API', value: 'item1', icon: <Icon icon="key" size={20}/>, onClick: () => navigateTo('/') },
+                            { label: 'AI Tables', value: 'item2', icon: <Icon icon="star" size={20}/>, onClick: () => navigateTo('/main2') },
+                            { label: 'Automated Reports', value: 'item3', icon: <Icon icon="star" size={20}/>, onClick: () => navigateTo('/main3') },
+                            { label: 'Placeholder', value: 'item4', icon: <Icon icon="star" size={20}/>, onClick: () => navigateTo('/main4') },
+
                         ]
                     },
                     {
-                        heading: 'Section 2',
+                        heading: 'Oher Projects',
                         items: [
                             { label: 'Item 3', value: 'item3', icon:  <Icon icon="star" size={20}/>, onClick: () => navigateTo('/path3') },
                             { label: 'Item 4', value: 'item4', icon:  <Icon icon="star" size={20}/>, onClick: () => navigateTo('/path4') },
