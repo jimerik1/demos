@@ -16,8 +16,8 @@ function Main2() {
                     { label: 'BHA', value: 0 },
                     { label: 'Pore Pressure file', value: 1 },
                     { label: 'Pore Pressure image', value: 2 },
-                    { label: 'Invalid', value: 3 },
-                    { label: 'Disabled', value: 4 }
+                    { label: 'Trajectory', value: 3 },
+                    { label: 'Connection Library', value: 4 }
                 ]}
                 onChange={(evt) => {
                     const { value, label } = evt.target; // Assuming evt.target correctly contains these

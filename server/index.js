@@ -3,40 +3,45 @@ const express = require('express');
 const multer = require('multer');
 const app = express();
 
-// Enable CORS for all routes and origins
 app.use(cors());
-// Middleware to parse JSON bodies
 app.use(express.json());
 
-// Set up multer storage engine for file uploads
+
 const storage = multer.diskStorage({
-    destination: function(req, file, cb) {
-        cb(null, 'uploads/');  // Save files in 'uploads' directory
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/');
     },
-    filename: function(req, file, cb) {
+    filename: (req, file, cb) => {
         cb(null, file.fieldname + '-' + Date.now() + '-' + file.originalname);
     }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ storage });
 
-// Endpoint to handle file uploads
 app.post('/upload', upload.single('file'), (req, res) => {
-    console.log('Received file:', req.file.originalname);
-    res.json({ message: 'File received' });
+    const model = req.body.model; // Retrieve the model from the request body
+    console.log('Received file:', req.file.originalname, 'Selected AI Model:', model);
+    if (model === "gpt4") {
+        console.log("GPT 4"); 
+    } else if (model === "gpt3") {
+        console.log("GPT 3.5");
+    } else if (model === "claude3"){
+        console.log("Claude 3");
+    }
+    
+    res.json({ message: 'File received', model });
 });
 
-// Existing endpoint to multiply two numbers
 app.post('/multiply', (req, res) => {
-    const { number1, number2 } = req.body;
-    const result = number1 * number2;
-    res.json({ result });
+    const { number1, number2 } = req.body; // Extract numbers from request body
+    const product = number1 * number2; // Correct operation for multiplication
+    console.log(product); // Log the correct result
+    res.json({ result: product }); // Send the result back to the client
 });
 
-// Set the port for the server
-const PORT = process.env.PORT || 3001;
 
-// Start the server
+
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
