@@ -1,7 +1,6 @@
 const cors = require('cors');
 const express = require('express');
 const multer = require('multer');
-const { OpenAI } = require('openai');
 const axios = require('axios');
 const app = express();
 require('dotenv').config();
@@ -71,10 +70,6 @@ async function sendToAPI(fileBuffer, promptText, model) {
         throw error;
     }
 }
-
-
-
-
 
 // Endpoint to upload files and send them to the OpenAI API
 app.post('/upload', upload.single('file'), async (req, res) => {
