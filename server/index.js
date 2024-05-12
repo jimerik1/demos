@@ -18,6 +18,7 @@ console.log(apiKeyOpenAI);
 
 // Function to send payload to OpenAI API and parse the response
 async function sendToAPI(fileBuffer, promptText, model) {
+    console.log("Preparing to send data to OpenAI API");
     try {
         const base64Image = fileBuffer.toString('base64');
         const imageUrl = `data:image/jpeg;base64,${base64Image}`;
@@ -41,10 +42,23 @@ async function sendToAPI(fileBuffer, promptText, model) {
             'Authorization': `Bearer ${apiKeyOpenAI}`
         };
 
-        const response = await axios.post('https://api.openai.com/v1/chat/completions', JSON.stringify(payload), { headers });
+        console.log("Making HTTP POST request to OpenAI");
+        const startTime = new Date();  // Timestamp before the request
+
+        const response = await axios.post('https://api.openai.com/v1/chat/completions', JSON.stringify(payload), { headers }); //ACTUAL REQUEST
         
+        const endTime = new Date();  // Timestamp after the response
+        console.log("Received response from OpenAI");
+        const responseTime = endTime - startTime;  // Calculate the response time
+        console.log(`Received response from OpenAI in ${responseTime} ms`);
+
+
         if (response.data.choices && response.data.choices.length > 0 && response.data.choices[0].message) {
             const messageContent = response.data.choices[0].message.content;
+            console.log("OpenAI Response:", messageContent);
+
+                        // Debug: Log the string to be parsed
+                        console.log("JSON String to be parsed:", messageContent);
 
             // Extract JSON from formatted message content
             const jsonStartIndex = messageContent.indexOf('json\n') + 'json\n'.length;
@@ -73,14 +87,18 @@ async function sendToAPI(fileBuffer, promptText, model) {
 
 // Endpoint to upload files and send them to the OpenAI API
 app.post('/upload', upload.single('file'), async (req, res) => {
+    console.log("Received request on /upload");
     if (!req.file || !req.body.model || !req.body.prompt) {
+        console.log("Missing required parameters");
         return res.status(400).json({ message: "File, model, and prompt are required." });
     }
 
+    console.log("Sending to OpenAI:", { model: req.body.model, prompt: req.body.prompt.length + " chars" });
     try {
         const data = await sendToAPI(req.file.buffer, req.body.prompt, req.body.model);
         res.json(data);
     } catch (error) {
+        console.error("Error processing your request:", error);
         res.status(500).json({ message: "Error processing your request.", error: error.toString() });
     }
 });

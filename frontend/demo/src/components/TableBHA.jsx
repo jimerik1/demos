@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Table, Card, Heading, Icon, Flex, Divider, Button, Grid, Message, Select } from '@oliasoft-open-source/react-ui-library';
+import Prompts from './Prompts';
 
 function TableBHA() {
     const headings = [
@@ -31,19 +32,8 @@ function TableBHA() {
         }
     ];
 
-    const prompt ='Please extract the following parameters in this document and return a json formatted structure with the data. Only return the json object and nothing else.\
-    The document should be something related to a Bottom Hole Assembly (BHA) used in when drilling oil wells. It will consist of many components with unique properties for each component, as well as their own dimensions, lengths etc.\
-    Use the following parameter names in the json object:\
-     - “Component Name”  - Look for a parameter that may be called something like “description” \"name\" something similar to that context, basically the name of each component in the BHA.\
-    - \"Length\" - if there is any information about the length of individual components, place that here.\
-    - \"Weight\" - look for a parameter that may be called \"weight\" or something similar. \
-    - \"Grade\" - If there is any information about a steel property for each component named \"grade\" or something that resembles this, then place it here.\
-    - \“Body OD\” - Look for a parameter that may be called something like “outer diameter” or something similar to that for the string body, or just try to guess based on the data.\
-    - \"Body ID\" - Look for a parameter that may be called something like “inner diameter” or something similar to that for the string body, or just try to guess based on the data.\
-    - \“Connection OD\” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.\
-    - \“Connection ID\” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.\
-    Make sure you get all of the points and always only use a number for all parameters except Component Name which is a string. Always respond with all of the parameters per component even if they are empty. We want to order the json object with drill pipe at the top, so if the data shows components from the bottom up (such as a drill bit or similar as the first component) then return your response with the last component first and then go in that order.';
-
+    //Set constants
+    const [loading, setLoading] = useState(false);
     const [promptResponse, setPromptResponse] = useState("Response from LLM will be displayed here");
     const [file, setFile] = useState(null);
     const [buttonDisabled, setButtonDisabled] = useState(true); // Initializing buttonDisabled as a state variable
@@ -61,7 +51,11 @@ function TableBHA() {
         console.log("Selected AI engine:", selectedAI);
         // You can now use selectedAI as an input to any function
     };
-
+    const [selectedPrompt, setSelectedPrompt] = useState({
+        id: '1',
+        text: 'Prompt 1 (less specified)',
+        value: 'Your first prompt text here...'
+    });
 
     const handleFileChange = (event) => {
         setFile(event.target.files[0]);
@@ -78,10 +72,11 @@ function TableBHA() {
             return;
         }
     
+        setLoading(true); // Show spinner and start status text changes
         const formData = new FormData();
         formData.append('file', file);
         formData.append('model', selectedAI);
-        formData.append('prompt', prompt);
+        formData.append('prompt', selectedPrompt.value); // Use the selected prompt value
     
         try {
             const response = await fetch('http://localhost:3001/upload', {
@@ -99,6 +94,8 @@ function TableBHA() {
         } catch (error) {
             console.error('Error:', error);
             alert('Error sending file.');
+        } finally {
+            setLoading(false); // Hide spinner
         }
     };
         
@@ -192,20 +189,23 @@ function TableBHA() {
 
             </Flex>
             <Divider />
+
+
+
             <Grid gap>
+
+            <Prompts onSelect={(prompt) => setSelectedPrompt(prompt)} value={selectedPrompt.id} />
+                
             <Message
-            message={{
-                content: prompt,
-                details: undefined,
-                heading: 'This is the instructions (prompt) sent to the LLM',
-                icon: false,
-                maxHeight: undefined,
-                onClose: function Ba(){},
-                type: 'Info',
-                visible: true,
-                withDismiss: false
-                  }}
-            />
+                    message={{
+                        content: selectedPrompt.value, // Display the currently selected prompt
+                        heading: 'This is the instructions (prompt) sent to the LLM',
+                        type: 'Info',
+                        visible: true,
+                    }}
+                />
+
+                       
                         <Message
                 message={{
                 content: promptResponse,
@@ -219,6 +219,7 @@ function TableBHA() {
                 withDismiss: false
                 }}
             />
+
 
             </Grid>
 
