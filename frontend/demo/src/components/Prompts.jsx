@@ -1,20 +1,29 @@
-import React from 'react';
-import { Select } from '@oliasoft-open-source/react-ui-library';
+import React, { useState } from 'react';
+import { Select, Modal, Dialog, Button, TextArea, Icon } from '@oliasoft-open-source/react-ui-library';
 
 const prompts = [
     {
+        id: 'user-defined',
+        text: 'User Defined',
+        icon: <Icon color="var(--color-text-error)" icon="user" />,
+        value: ''
+    },
+{
         id: '1',
-        text: 'Prompt 1 (less specified)',
+        details: '(less specified)',
+        text: 'Prompt 1',
         value: 'Your first prompt text here...'
     },
     {
         id: '2',
-        text: 'Prompt 2 (more specified)',
+        details: '(more specified)',
+        text: 'Prompt 2',
         value: 'Your second prompt text here...'
     },
     {
         id: '3',
-        text: 'Prompt 3 (most specified)',
+        details: '(most specified)',
+        text: 'Prompt 3',
         value: 'Please extract the following parameters in this document and return a json formatted structure with the data. Only return the json object and nothing else.\
         The document should be something related to a Bottom Hole Assembly (BHA) used in when drilling oil wells. It will consist of many components with unique properties for each component, as well as their own dimensions, lengths etc.\
         Use the following parameter names in the json object:\
@@ -31,16 +40,59 @@ const prompts = [
 ];
 
 function Prompts({ onSelect, value }) {
+    const [isModalVisible, setModalVisible] = useState(false);
+    const [userPrompt, setUserPrompt] = useState('');
+
+    const handleChange = (e) => {
+        const selectedOption = prompts.find(p => p.id === e.target.value);
+        if (selectedOption.id === 'user-defined') {
+            setModalVisible(true); // Open the modal if User Defined is selected
+        } else {
+            onSelect(selectedOption);
+        }
+    };
+
+    const handleConfirm = () => {
+        onSelect({ ...prompts.find(p => p.id === 'user-defined'), value: userPrompt });
+        setModalVisible(false); // Close the modal and pass the user defined prompt
+    };
+
     return (
-        <Select
-            onChange={(e) => onSelect(prompts.find(p => p.id === e.target.value))}
-            value={value} // This ensures the select shows the current value
-            options={prompts.map(p => ({ label: p.text, value: p.id }))}
-            placeholder="Choose your prompt"
-            searchable
-            width="auto"
-        />
+        <>
+            <Select
+                onChange={handleChange}
+                value={value}
+                options={prompts.map(p => ({ label: p.text, value: p.id, details: p.details, icon: p.icon }))}
+                placeholder="Choose your prompt"
+                searchable
+                width="auto"
+            />
+
+{isModalVisible && (
+                <Modal visible={isModalVisible} centered onEscape={() => setModalVisible(false)}>
+                    <Dialog dialog={{
+                        onClose: () => setModalVisible(false),
+                        heading: 'Define Your Own Prompt',
+                        content: (
+                            <TextArea
+                                value={userPrompt}
+                                onChange={(e) => setUserPrompt(e.target.value)}
+                                placeholder="Type your prompt here..."
+                            />
+                        ),
+                        footer: (
+                            <>
+                                <Button label="Confirm" onClick={handleConfirm} />
+                                <Button label="Cancel" onClick={() => setModalVisible(false)} />
+                            </>
+                        )
+                    }} />
+                </Modal>
+            )}
+
+        </>
     );
+
 
 }
 

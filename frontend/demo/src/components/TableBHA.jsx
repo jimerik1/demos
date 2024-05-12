@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Table, Card, Heading, Icon, Flex, Divider, Button, Grid, Message, Select } from '@oliasoft-open-source/react-ui-library';
+import { Table, Card, Heading, Icon, Flex, Divider, Button, Grid, Message, Select, Accordion } from '@oliasoft-open-source/react-ui-library';
 import Prompts from './Prompts';
 
 function TableBHA() {
@@ -86,6 +86,13 @@ function TableBHA() {
             if (response.ok) {
                 const newData = await response.json();  // Assuming the response is JSON
                 console.log(newData);  // Log the response to check its structure
+
+            // Normalize data if it comes in a nested structure
+            if (newData.components) {
+                newData = newData.components;
+            }
+
+
                 setData(newData);  // Update the state with the new data
                 setPromptResponse(JSON.stringify(newData, null, 2));
             } else {
@@ -128,6 +135,12 @@ function TableBHA() {
         })));
     };
 
+    const [isExpanded, setIsExpanded] = useState(false);
+    const toggleAccordion = () => {
+        setIsExpanded(!isExpanded);
+      };
+    
+
     return (
         <Card heading={<Heading>Example Table: BHA</Heading>}>
             <div style={{ position: 'relative' }}>
@@ -154,6 +167,14 @@ function TableBHA() {
             />
 
 <Divider />
+
+<Accordion
+      bordered
+      expanded={isExpanded}
+      heading={<Heading onClickHelp={() => toggleAccordion()}>Advanced</Heading>}
+    >
+
+
             <Flex gap="var(--padding-sm)">
                 <Button label="Upload File" onClick={handleFileUpload} />
                 <input 
@@ -167,17 +188,18 @@ function TableBHA() {
                     onChange={handleAIChange}
                     value={selectedAI}
                     options={[
-                        { label: 'GPT 4 Turbo', value: 'gpt-4-turbo' },
-                        { label: 'GPT 3.5 Turbo', value: 'gpt-3.5-turbo' },
-                        { label: 'Claude 3', value: 'claude3' },
-                        { label: 'Google Bard', value: 'bard' },
-                        { label: 'LLama 3', value: 'llama3' }
+                        { label: 'GPT 4 Turbo', value: 'gpt-4-turbo', details: 'Open AI' },
+                        { label: 'GPT 3.5 Turbo', value: 'gpt-3.5-turbo', details: 'Open AI' },
+                        { label: 'Claude 3', value: 'claude3', details: 'Anthropic' },
+                        { label: 'Gemini', value: 'gemini', details: 'Google' },
+                        { label: 'Llama 3', value: 'llama3', details: 'Meta' }
                     ]}
                     placeholder="Select AI engine"
                     searchable
                     width="auto"
                 />
 
+<Prompts onSelect={(prompt) => setSelectedPrompt(prompt)} value={selectedPrompt.id} />
 
 
                 <Button
@@ -193,8 +215,6 @@ function TableBHA() {
 
 
             <Grid gap>
-
-            <Prompts onSelect={(prompt) => setSelectedPrompt(prompt)} value={selectedPrompt.id} />
                 
             <Message
                     message={{
@@ -223,6 +243,7 @@ function TableBHA() {
 
             </Grid>
 
+            </Accordion>
 
 
 
