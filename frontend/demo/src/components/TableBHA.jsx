@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Table, Card, Heading, Icon, Flex, Divider, Button, Grid, Message, Select, Accordion, Text, ProgressBar } from '@oliasoft-open-source/react-ui-library';
+import { Table, Card, Heading, Icon, Flex, Divider, Button, Grid, Message, Select, Accordion, Text, ProgressBar, Menu } from '@oliasoft-open-source/react-ui-library';
 import Prompts from './Prompts';
 
 function TableBHA() {
@@ -54,9 +54,9 @@ function TableBHA() {
         "Diving into the details",
         "Diving into the details.",
         "Diving into the details..",
-        "ahaa.. interesting",
-        "ahaa.. interesting.",
-        "ahaa.. interesting..",
+        "interesting",
+        "interesting.",
+        "interesting..",
         "I think I have it now",
         "I think I have it now.",
         "I think I have it now..",
@@ -161,8 +161,19 @@ function TableBHA() {
     };
     const [selectedPrompt, setSelectedPrompt] = useState({
         id: '1',
-        text: 'Prompt 1 (less specified)',
-        value: 'Your first prompt text here...'
+        text: 'Prompt 1 (default)',
+        value: 'Please extract the following parameters in this document and return a json formatted structure with the data. Only return the json object and nothing else.\
+        The document should be something related to a Bottom Hole Assembly (BHA) used in when drilling oil wells. It will consist of many components with unique properties for each component, as well as their own dimensions, lengths etc.\
+        Use the following parameter names in the json object:\
+         - “Component Name”  - Look for a parameter that may be called something like “description” \"name\" something similar to that context, basically the name of each component in the BHA.\
+        - \"Length\" - if there is any information about the length of individual components, place that here.\
+        - \"Weight\" - look for a parameter that may be called \"weight\" or something similar. \
+        - \"Grade\" - If there is any information about a steel property for each component named \"grade\" or something that resembles this, then place it here.\
+        - \“Body OD\” - Look for a parameter that may be called something like “outer diameter” or something similar to that for the string body, or just try to guess based on the data.\
+        - \"Body ID\" - Look for a parameter that may be called something like “inner diameter” or something similar to that for the string body, or just try to guess based on the data.\
+        - \“Connection OD\” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.\
+        - \“Connection ID\” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.\
+        Make sure you get all of the points and always only use a number for all parameters except Component Name which is a string. Always respond with all of the parameters per component even if they are empty. We want to order the json object with drill pipe at the top, so if the data shows components from the bottom up (such as a drill bit or similar as the first component) then return your response with the last component first and then go in that order.'
     });
 
     // Handling Loader (messages)
@@ -328,6 +339,12 @@ function TableBHA() {
                 <div onDragOver={handleDragOver} onDrop={handleDrop} style={{ width: '100%' }}>
                     <Table
                         table={{
+                            actions: [
+                                {
+                                  childComponent: <Menu menu={{label: 'Ask the AI', sections: [{label: 'Ask AI to generate BHA', type: 'Option'}, {label: 'Ask AI to fix existing BHA', type: 'Option'}], small: true, trigger: 'DropDownButton'}} />
+                                }
+                              ],
+                          
                             columnWidths: ['200px', '100px', '100px', 'auto', '100px', '100px', '100px', '100px'],
                             headers: [{
                                 cells: headings.map((heading, index) => ({
