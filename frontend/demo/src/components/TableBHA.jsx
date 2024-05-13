@@ -248,7 +248,8 @@ const startProgressInterval = () => {
     
 
     return (
-        <Card heading={<Heading>Example Table: BHA</Heading>}>
+        <div style={{ width: '80%' }}>
+        <Card heading={<Heading>Example Table: BHA</Heading>} >
             <div style={{ position: 'relative' }}>
                 <Icon name="upload" onClick={() => fileInputRef.current.click()} style={{ cursor: 'pointer', position: 'absolute', right: '20px', top: '5px' }} />
                 <input type="file" ref={fileInputRef} onChange={(e) => console.log("File uploaded:", e.target.files[0])} style={{ display: 'none' }} />
@@ -371,6 +372,8 @@ const startProgressInterval = () => {
 
 
         </Card>
+        </div>
+
         
         
     );

@@ -9,6 +9,7 @@ import Header from './components/Header';
 import '../node_modules/@oliasoft-open-source/react-ui-library/dist/global.css';
 import './App.scss';  // Make sure this import is correct based on where App.scss is located
 
+
 function App() {
     return (
         <Router>

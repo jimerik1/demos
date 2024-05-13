@@ -34,7 +34,7 @@ function Nav() {
                     }
                 ]
             }}
-            startOpen={true}
+            startOpen={false}
             onShiftClickToggleOpen={() => console.log("Sidebar toggle via shift-click")}
             top="50px"
         />
