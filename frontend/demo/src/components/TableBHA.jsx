@@ -37,6 +37,7 @@ function TableBHA() {
     const [file, setFile] = useState(null);
     const [buttonDisabled, setButtonDisabled] = useState(true); // Initializing buttonDisabled as a state variable
 
+    const [fetchTime, setFetchTime] = useState(0);
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentMessage, setCurrentMessage] = useState("");
@@ -53,10 +54,17 @@ function TableBHA() {
         return () => {
             // Cleanup intervals when component unmounts or loading stops
             if (messageIntervalRef.current) clearInterval(messageIntervalRef.current);
-            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);ç
+            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
         };
     }, []); // Empty dependency array ensures this runs on mount and unmount only
 
+    useEffect(() => {
+        if (file) {
+            handleExecute();
+        }
+        // Add any conditions or additional logic if needed
+    }, [file]);  // Dependency array ensures this runs only when `file` changes
+    
 
         // Adding state for storing the selected AI engine
     const [selectedAI, setSelectedAI] = useState(""); 
@@ -89,7 +97,7 @@ const startMessageInterval = () => {
         } else {
             clearInterval(messageIntervalRef.current);
         }
-    }, 2000);
+    }, 800);
 };
 
 //Handling Loader (progressbar)
@@ -103,7 +111,7 @@ const startProgressInterval = () => {
             }
             return nextProgress;
         });
-    }, 2000);
+    }, 500);
 };
 
 
@@ -122,6 +130,7 @@ const startProgressInterval = () => {
             return;
         }
     
+        const startTime = Date.now(); // Capture start time
         setLoading(true);
         setProgress(0);
         setCurrentMessage(messages[0]);
@@ -143,6 +152,8 @@ const startProgressInterval = () => {
             });
             if (response.ok) {
                 const newData = await response.json();  // Assuming the response is JSON
+                const endTime = Date.now();  // Capture end time
+                setFetchTime((endTime - startTime) / 1000);  // Calculate total time in seconds
                 console.log(newData);  // Log the response to check its structure
 
             // Normalize data if it comes in a nested structure
@@ -226,7 +237,6 @@ const startProgressInterval = () => {
                     - \“Connection ID\” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.\
                     Make sure you get all of the points and always only use a number for all parameters except Component Name which is a string. Always respond with all of the parameters per component even if they are empty. We want to order the json object with drill pipe at the top, so if the data shows components from the bottom up (such as a drill bit or similar as the first component) then return your response with the last component first and then go in that order.'
                 });
-                handleExecute();
             }
         };
     
@@ -352,7 +362,7 @@ const startProgressInterval = () => {
                 withDismiss: false
                 }}
             />
-
+            <Text>Total time for fetching response: {fetchTime} seconds</Text>
 
             </Grid>
 
