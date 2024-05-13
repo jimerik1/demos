@@ -32,21 +32,102 @@ function TableBHA() {
         }
     ];
 
-    //Set constants
+    // Set constants
     const [promptResponse, setPromptResponse] = useState("Response from LLM will be displayed here");
     const [file, setFile] = useState(null);
     const [buttonDisabled, setButtonDisabled] = useState(true); // Initializing buttonDisabled as a state variable
+    const [isDragAndDrop, setIsDragAndDrop] = useState(false);
 
     const [fetchTime, setFetchTime] = useState(0);
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentMessage, setCurrentMessage] = useState("");
     const messages = [
+        "Initializing upload",
+        "Initializing upload.",
+        "Initializing upload..",
         "Initializing upload...",
+        "Reading payload",
+        "Reading payload.",
+        "Reading payload..",
+        "Reading payload...",
+        "Diving into the details",
+        "Diving into the details.",
+        "Diving into the details..",
+        "ahaa.. interesting",
+        "ahaa.. interesting.",
+        "ahaa.. interesting..",
+        "I think I have it now",
+        "I think I have it now.",
+        "I think I have it now..",
+        "Unpacking the mysteries of the universe",
+        "Unpacking the mysteries of the universe.",
+        "Unpacking the mysteries of the universe..",
+        "Summoning data wizards",
+        "Summoning data wizards.",
+        "Summoning data wizards..",
+        "Converting caffeine into code",
+        "Converting caffeine into code.",
+        "Converting caffeine into code..",
+        "Finding Waldo",
+        "Finding Waldo.",
+        "Finding Waldo..",
+        "Herding digital cats",
+        "Herding digital cats.",
+        "Herding digital cats..",
+        "Charging flux capacitor",
+        "Charging flux capacitor.",
+        "Charging flux capacitor..",
+        "Assembling Avengers",
+        "Assembling Avengers.",
+        "Assembling Avengers..",
+        "Polishing pixels",
+        "Polishing pixels.",
+        "Polishing pixels..",
+        "Engaging warp drive",
+        "Engaging warp drive.",
+        "Engaging warp drive..",
+        "Reticulating splines",
+        "Reticulating splines.",
+        "Reticulating splines..",
+        "Preparing dance moves",
+        "Preparing dance moves.",
+        "Preparing dance moves..",
+        "Almost there",
+        "Almost there.",
+        "Almost there..",
+        "Patience, young padawan",
+        "Patience, young padawan.",
+        "Patience, young padawan..",
+        "Calculating the meaning of life",
+        "Calculating the meaning of life.",
+        "Calculating the meaning of life..",
+        "Just a sec... or two",
+        "Just a sec... or two.",
+        "Just a sec... or two..",
+        "Channeling my inner Einstein",
+        "Channeling my inner Einstein.",
+        "Channeling my inner Einstein..",
+        "Hacking the mainframe",
+        "Hacking the mainframe.",
+        "Hacking the mainframe..",
+        "Decoding the Matrix",
+        "Decoding the Matrix.",
+        "Decoding the Matrix..",
+        "Loading... still loading",
+        "Loading... still loading.",
+        "Loading... still loading..",
+        "Uploading the awesomeness",
+        "Uploading the awesomeness.",
+        "Uploading the awesomeness..",
+        "Summoning the magic",
+        "Summoning the magic.",
+        "Summoning the magic..",
         "Processing data...",
         "Finalizing...",
         "Complete"
     ];
+    
     const messageIntervalRef = useRef(null);
     const progressIntervalRef = useRef(null);
 
@@ -59,14 +140,13 @@ function TableBHA() {
     }, []); // Empty dependency array ensures this runs on mount and unmount only
 
     useEffect(() => {
-        if (file) {
+        if (isDragAndDrop && file) {
             handleExecute();
+            setIsDragAndDrop(false);
         }
-        // Add any conditions or additional logic if needed
-    }, [file]);  // Dependency array ensures this runs only when `file` changes
-    
+    }, [file, isDragAndDrop]);
 
-        // Adding state for storing the selected AI engine
+    // Adding state for storing the selected AI engine
     const [selectedAI, setSelectedAI] = useState(""); 
 
     // Modify the Select component's onChange handler to update the selectedAI state
@@ -85,35 +165,32 @@ function TableBHA() {
         value: 'Your first prompt text here...'
     });
 
-
-
-//Handling Loader (messages)
-const startMessageInterval = () => {
-    let messageIndex = 0;
-    messageIntervalRef.current = setInterval(() => {
-        messageIndex++;
-        if (messageIndex < messages.length) {
-            setCurrentMessage(messages[messageIndex]);
-        } else {
-            clearInterval(messageIntervalRef.current);
-        }
-    }, 800);
-};
-
-//Handling Loader (progressbar)
-const startProgressInterval = () => {
-    progressIntervalRef.current = setInterval(() => {
-        setProgress(prevProgress => {
-            const nextProgress = prevProgress + (100 / 15);
-            if (nextProgress >= 100) {
-                clearInterval(progressIntervalRef.current);
-                return 100; // Ensure it does not exceed 100
+    // Handling Loader (messages)
+    const startMessageInterval = () => {
+        let messageIndex = 0;
+        messageIntervalRef.current = setInterval(() => {
+            messageIndex++;
+            if (messageIndex < messages.length) {
+                setCurrentMessage(messages[messageIndex]);
+            } else {
+                clearInterval(messageIntervalRef.current);
             }
-            return nextProgress;
-        });
-    }, 500);
-};
+        }, 300);
+    };
 
+    // Handling Loader (progressbar)
+    const startProgressInterval = () => {
+        progressIntervalRef.current = setInterval(() => {
+            setProgress(prevProgress => {
+                const nextProgress = prevProgress + (100 / 50);
+                if (nextProgress >= 100) {
+                    clearInterval(progressIntervalRef.current);
+                    return 100; // Ensure it does not exceed 100
+                }
+                return nextProgress;
+            });
+        }, 500);
+    };
 
     const handleFileChange = (event) => {
         setFile(event.target.files[0]);
@@ -137,13 +214,10 @@ const startProgressInterval = () => {
         startMessageInterval();
         startProgressInterval();
     
-
         const formData = new FormData();
         formData.append('file', file);
         formData.append('model', selectedAI);
         formData.append('prompt', selectedPrompt.value); // Use the selected prompt value
-
-    
     
         try {
             const response = await fetch('http://localhost:3001/upload', {
@@ -156,12 +230,11 @@ const startProgressInterval = () => {
                 setFetchTime((endTime - startTime) / 1000);  // Calculate total time in seconds
                 console.log(newData);  // Log the response to check its structure
 
-            // Normalize data if it comes in a nested structure
-            if (newData.components) {
-                newData = newData.components;
-            }
-
-
+                // Normalize data if it comes in a nested structure
+                if (newData.components) {
+                    newData = newData.components;
+                }
+    
                 setData(newData);  // Update the state with the new data
                 setPromptResponse(JSON.stringify(newData, null, 2));
             } else {
@@ -174,10 +247,9 @@ const startProgressInterval = () => {
             setLoading(false);
             if (messageIntervalRef.current) clearInterval(messageIntervalRef.current);
             if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-        
         }
     };
-        
+
     const [data, setData] = useState(initialData);
     const [currentUnits, setCurrentUnits] = useState(units);
     const fileInputRef = useRef(null);
@@ -207,175 +279,158 @@ const startProgressInterval = () => {
         })));
     };
 
-        // Drag and Drop Handlers
-        const handleDragOver = (event) => {
-            event.preventDefault(); // Necessary to allow the drop
-        };
+    // Drag and Drop Handlers
+    const handleDragOver = (event) => {
+        event.preventDefault(); // Necessary to allow the drop
+    };
 
-        const handleDrop = (event) => {
-            event.preventDefault();
-            const files = event.dataTransfer.files;
-            if (files.length) {
-                setFile(files[0]);
-                setButtonDisabled(false);
-                // Set default AI model and prompt
-                setSelectedAI("gpt-4-turbo"); // Assuming you want to default to 'gpt-4-turbo'
-                setSelectedPrompt({
-                    id: '1', 
-                    text: 'Prompt 1', 
-                    details: '(most specified)',
-                    value: 'Please extract the following parameters in this document and return a json formatted structure with the data. Only return the json object and nothing else.\
-                    The document should be something related to a Bottom Hole Assembly (BHA) used in when drilling oil wells. It will consist of many components with unique properties for each component, as well as their own dimensions, lengths etc.\
-                    Use the following parameter names in the json object:\
-                     - “Component Name”  - Look for a parameter that may be called something like “description” \"name\" something similar to that context, basically the name of each component in the BHA.\
-                    - \"Length\" - if there is any information about the length of individual components, place that here.\
-                    - \"Weight\" - look for a parameter that may be called \"weight\" or something similar. \
-                    - \"Grade\" - If there is any information about a steel property for each component named \"grade\" or something that resembles this, then place it here.\
-                    - \“Body OD\” - Look for a parameter that may be called something like “outer diameter” or something similar to that for the string body, or just try to guess based on the data.\
-                    - \"Body ID\" - Look for a parameter that may be called something like “inner diameter” or something similar to that for the string body, or just try to guess based on the data.\
-                    - \“Connection OD\” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.\
-                    - \“Connection ID\” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.\
-                    Make sure you get all of the points and always only use a number for all parameters except Component Name which is a string. Always respond with all of the parameters per component even if they are empty. We want to order the json object with drill pipe at the top, so if the data shows components from the bottom up (such as a drill bit or similar as the first component) then return your response with the last component first and then go in that order.'
-                });
-            }
-        };
-    
+    const handleDrop = (event) => {
+        event.preventDefault();
+        const files = event.dataTransfer.files;
+        if (files.length) {
+            setFile(files[0]);
+            setIsDragAndDrop(true);
+            setButtonDisabled(false);
+            // Set default AI model and prompt
+            setSelectedAI("gpt-4o"); // default set to 'gpt-4o'
+            setSelectedPrompt({
+                id: '1',
+                text: 'Prompt 1',
+                details: '(most specified)',
+                value: 'Please extract the following parameters in this document and return a json formatted structure with the data. Only return the json object and nothing else.\
+                The document should be something related to a Bottom Hole Assembly (BHA) used in when drilling oil wells. It will consist of many components with unique properties for each component, as well as their own dimensions, lengths etc.\
+                Use the following parameter names in the json object:\
+                 - “Component Name”  - Look for a parameter that may be called something like “description” \"name\" something similar to that context, basically the name of each component in the BHA.\
+                - \"Length\" - if there is any information about the length of individual components, place that here.\
+                - \"Weight\" - look for a parameter that may be called \"weight\" or something similar. \
+                - \"Grade\" - If there is any information about a steel property for each component named \"grade\" or something that resembles this, then place it here.\
+                - \“Body OD\” - Look for a parameter that may be called something like “outer diameter” or something similar to that for the string body, or just try to guess based on the data.\
+                - \"Body ID\" - Look for a parameter that may be called something like “inner diameter” or something similar to that for the string body, or just try to guess based on the data.\
+                - \“Connection OD\” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.\
+                - \“Connection ID\” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.\
+                Make sure you get all of the points and always only use a number for all parameters except Component Name which is a string. Always respond with all of the parameters per component even if they are empty. We want to order the json object with drill pipe at the top, so if the data shows components from the bottom up (such as a drill bit or similar as the first component) then return your response with the last component first and then go in that order.'
+            });
+        }
+    };
 
     const [isExpanded, setIsExpanded] = useState(false);
     const toggleAccordion = () => {
         setIsExpanded(!isExpanded);
-      };
-    
+    };
 
     return (
         <div style={{ width: '80%' }}>
-        <Card heading={<Heading>Example Table: BHA</Heading>} >
-            <div style={{ position: 'relative' }}>
-                <Icon name="upload" onClick={() => fileInputRef.current.click()} style={{ cursor: 'pointer', position: 'absolute', right: '20px', top: '5px' }} />
-                <input type="file" ref={fileInputRef} onChange={(e) => console.log("File uploaded:", e.target.files[0])} style={{ display: 'none' }} />
-            </div>
-            <div onDragOver={handleDragOver} onDrop={handleDrop} style={{ width: '100%' }}>
-            <Table
-                table={{
-                    columnWidths: ['200px', '100px', '100px', 'auto', '100px', '100px', '100px', '100px'],
-                    headers: [{
-                        cells: headings.map((heading, index) => ({
-                            value: heading,
-                            actions: index < 2 ? [{
-                                primary: true,
-                                label: `Toggle ${heading === "Length" ? "m/ft" : "kg/m/ppf"}`,
-                                onClick: () => handleUnitToggle(index)
-                            }] : undefined
-                        }))
-                    }],
-                    rows: data.map(item => ({
-                        cells: Object.values(item).map(value => ({ value }))
-                    }))
-                }}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}        
-            /> </div>
-      
-      
-        <div id="loading content" style={{ display: loading ? 'block' : 'none' }}>
-        <Divider />
-            <Grid columns="1fr 4fr">
-                <Text>Loading... {currentMessage}</Text>
-                <ProgressBar
-                    colored
-                    percentage={progress}
-                    width="100%"
-                />
-            </Grid>
-         </div>
+            <Card heading={<Heading>Example Table: BHA</Heading>} >
+                <div style={{ position: 'relative' }}>
+                    <Icon name="upload" onClick={handleFileUpload} style={{ cursor: 'pointer', position: 'absolute', right: '20px', top: '5px' }} />
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: 'none' }} />
+                </div>
+                <div onDragOver={handleDragOver} onDrop={handleDrop} style={{ width: '100%' }}>
+                    <Table
+                        table={{
+                            columnWidths: ['200px', '100px', '100px', 'auto', '100px', '100px', '100px', '100px'],
+                            headers: [{
+                                cells: headings.map((heading, index) => ({
+                                    value: heading,
+                                    actions: index < 2 ? [{
+                                        primary: true,
+                                        label: `Toggle ${heading === "Length" ? "m/ft" : "kg/m/ppf"}`,
+                                        onClick: () => handleUnitToggle(index)
+                                    }] : undefined
+                                }))
+                            }],
+                            rows: data.map(item => ({
+                                cells: Object.values(item).map(value => ({ value }))
+                            }))
+                        }}
+                        onDragOver={handleDragOver}
+                        onDrop={handleDrop}
+                    />
+                </div>
 
+                <div id="loading content" style={{ display: loading ? 'block' : 'none' }}>
+                    <Divider />
+                    <Grid columns="1fr 4fr">
+                        <Text>{currentMessage}                        <ProgressBar
+                            colored
+                            percentage={progress}
+                            width="100%"
+                        /></Text>
 
-<Divider />
+                    </Grid>
+                </div>
 
-<Accordion
-      bordered
-      expanded={isExpanded}
-      heading={<Heading onClickHelp={() => toggleAccordion()}>Advanced</Heading>}
-    >
+                <Divider />
 
+                <Accordion
+                    bordered
+                    expanded={isExpanded}
+                    heading={<Heading onClickHelp={() => toggleAccordion()}>Advanced</Heading>}
+                >
+                    <Flex gap="var(--padding-sm)">
+                        <Button label="Upload File" onClick={handleFileUpload} />
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                            style={{ display: 'none' }}
+                        />
 
-            <Flex gap="var(--padding-sm)">
-                <Button label="Upload File" onClick={handleFileUpload} />
-                <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    onChange={handleFileChange} 
-                    style={{ display: 'none' }}
-                />
+                        <Select
+                            onChange={handleAIChange}
+                            value={selectedAI}
+                            options={[
+                                { label: 'GPT 4o', value: 'gpt-4o', details: 'Open AI' },
+                                { label: 'GPT 4 Turbo', value: 'gpt-4-turbo', details: 'Open AI' },
+                                { label: 'GPT 3.5 Turbo', value: 'gpt-3.5-turbo', details: 'Open AI' },
+                                { label: 'Claude 3', value: 'claude3', details: 'Anthropic' },
+                                { label: 'Gemini', value: 'gemini', details: 'Google' },
+                                { label: 'Llama 3', value: 'llama3', details: 'Meta' }
+                            ]}
+                            placeholder="Select AI engine"
+                            searchable
+                            width="auto"
+                        />
 
-                <Select
-                    onChange={handleAIChange}
-                    value={selectedAI}
-                    options={[
-                        { label: 'GPT 4 Turbo', value: 'gpt-4-turbo', details: 'Open AI' },
-                        { label: 'GPT 3.5 Turbo', value: 'gpt-3.5-turbo', details: 'Open AI' },
-                        { label: 'Claude 3', value: 'claude3', details: 'Anthropic' },
-                        { label: 'Gemini', value: 'gemini', details: 'Google' },
-                        { label: 'Llama 3', value: 'llama3', details: 'Meta' }
-                    ]}
-                    placeholder="Select AI engine"
-                    searchable
-                    width="auto"
-                />
+                        <Prompts onSelect={(prompt) => setSelectedPrompt(prompt)} value={selectedPrompt.id} />
 
-<Prompts onSelect={(prompt) => setSelectedPrompt(prompt)} value={selectedPrompt.id} />
+                        <Button
+                            colored
+                            disabled={buttonDisabled}
+                            label="Execute AI Magic"
+                            onClick={handleExecute}
+                        />
+                    </Flex>
+                    <Divider />
 
-
-                <Button
-                    colored
-                    disabled={buttonDisabled}
-                    label="Execute AI Magic"
-                    onClick={handleExecute}
-                />
-
-            </Flex>
-            <Divider />
-
-
-
-            <Grid gap>
-                
-            <Message
-                    message={{
-                        content: selectedPrompt.value, // Display the currently selected prompt
-                        heading: 'This is the instructions (prompt) sent to the LLM',
-                        type: 'Info',
-                        visible: true,
-                    }}
-                />
-
-                       
+                    <Grid gap>
                         <Message
-                message={{
-                content: promptResponse,
-                details: undefined,
-                heading: 'Raw response from LLM',
-                icon: false,
-                maxHeight: undefined,
-                onClose: function Ba(){},
-                type: 'Success',
-                visible: true,
-                withDismiss: false
-                }}
-            />
-            <Text>Total time for fetching response: {fetchTime} seconds</Text>
+                            message={{
+                                content: selectedPrompt.value, // Display the currently selected prompt
+                                heading: 'This is the instructions (prompt) sent to the LLM',
+                                type: 'Info',
+                                visible: true,
+                            }}
+                        />
 
-            </Grid>
-
-            </Accordion>
-
-
-
-        </Card>
+                        <Message
+                            message={{
+                                content: promptResponse,
+                                details: undefined,
+                                heading: 'Raw response from LLM',
+                                icon: false,
+                                maxHeight: undefined,
+                                onClose: function Ba() { },
+                                type: 'Success',
+                                visible: true,
+                                withDismiss: false
+                            }}
+                        />
+                        <Text>Total time for fetching response: {fetchTime} seconds</Text>
+                    </Grid>
+                </Accordion>
+            </Card>
         </div>
-
-        
-        
     );
 }
 
