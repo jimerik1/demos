@@ -10,20 +10,8 @@ const prompts = [
     },
 {
         id: '1',
-        details: '(less specified)',
-        text: 'Prompt 1',
-        value: 'Your first prompt text here...'
-    },
-    {
-        id: '2',
-        details: '(more specified)',
-        text: 'Prompt 2',
-        value: 'Your second prompt text here...'
-    },
-    {
-        id: '3',
         details: '(most specified)',
-        text: 'Prompt 3',
+        text: 'Prompt 1',
         value: 'Please extract the following parameters in this document and return a json formatted structure with the data. Only return the json object and nothing else.\
         The document should be something related to a Bottom Hole Assembly (BHA) used in when drilling oil wells. It will consist of many components with unique properties for each component, as well as their own dimensions, lengths etc.\
         Use the following parameter names in the json object:\
@@ -36,6 +24,18 @@ const prompts = [
         - \“Connection OD\” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.\
         - \“Connection ID\” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.\
         Make sure you get all of the points and always only use a number for all parameters except Component Name which is a string. Always respond with all of the parameters per component even if they are empty. We want to order the json object with drill pipe at the top, so if the data shows components from the bottom up (such as a drill bit or similar as the first component) then return your response with the last component first and then go in that order.'
+    },
+    {
+        id: '2',
+        details: '(less specified)',
+        text: 'Prompt 2',
+        value: 'Your second prompt text here...'
+    },
+    {
+        id: '3',
+        details: '(least specified)',
+        text: 'Prompt 3',
+        value: 'Third prompt here'
     }
 ];
 

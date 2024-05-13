@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Table, Card, Heading, Icon, Flex, Divider, Button, Grid, Message, Select, Accordion } from '@oliasoft-open-source/react-ui-library';
+import { Table, Card, Heading, Icon, Flex, Divider, Button, Grid, Message, Select, Accordion, Text, ProgressBar } from '@oliasoft-open-source/react-ui-library';
 import Prompts from './Prompts';
 
 function TableBHA() {
@@ -33,13 +33,33 @@ function TableBHA() {
     ];
 
     //Set constants
-    const [loading, setLoading] = useState(false);
     const [promptResponse, setPromptResponse] = useState("Response from LLM will be displayed here");
     const [file, setFile] = useState(null);
     const [buttonDisabled, setButtonDisabled] = useState(true); // Initializing buttonDisabled as a state variable
 
+    const [loading, setLoading] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [currentMessage, setCurrentMessage] = useState("");
+    const messages = [
+        "Initializing upload...",
+        "Processing data...",
+        "Finalizing...",
+        "Complete"
+    ];
+    const messageIntervalRef = useRef(null);
+    const progressIntervalRef = useRef(null);
+
+    useEffect(() => {
+        return () => {
+            // Cleanup intervals when component unmounts or loading stops
+            if (messageIntervalRef.current) clearInterval(messageIntervalRef.current);
+            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);ç
+        };
+    }, []); // Empty dependency array ensures this runs on mount and unmount only
+
+
         // Adding state for storing the selected AI engine
-    const [selectedAI, setSelectedAI] = useState("");
+    const [selectedAI, setSelectedAI] = useState(""); 
 
     // Modify the Select component's onChange handler to update the selectedAI state
     const handleAIChange = (event) => {
@@ -57,6 +77,36 @@ function TableBHA() {
         value: 'Your first prompt text here...'
     });
 
+
+
+//Handling Loader (messages)
+const startMessageInterval = () => {
+    let messageIndex = 0;
+    messageIntervalRef.current = setInterval(() => {
+        messageIndex++;
+        if (messageIndex < messages.length) {
+            setCurrentMessage(messages[messageIndex]);
+        } else {
+            clearInterval(messageIntervalRef.current);
+        }
+    }, 2000);
+};
+
+//Handling Loader (progressbar)
+const startProgressInterval = () => {
+    progressIntervalRef.current = setInterval(() => {
+        setProgress(prevProgress => {
+            const nextProgress = prevProgress + (100 / 15);
+            if (nextProgress >= 100) {
+                clearInterval(progressIntervalRef.current);
+                return 100; // Ensure it does not exceed 100
+            }
+            return nextProgress;
+        });
+    }, 2000);
+};
+
+
     const handleFileChange = (event) => {
         setFile(event.target.files[0]);
         setButtonDisabled(false); // Correctly updating the state
@@ -72,11 +122,19 @@ function TableBHA() {
             return;
         }
     
-        setLoading(true); // Show spinner and start status text changes
+        setLoading(true);
+        setProgress(0);
+        setCurrentMessage(messages[0]);
+        startMessageInterval();
+        startProgressInterval();
+    
+
         const formData = new FormData();
         formData.append('file', file);
         formData.append('model', selectedAI);
         formData.append('prompt', selectedPrompt.value); // Use the selected prompt value
+
+    
     
         try {
             const response = await fetch('http://localhost:3001/upload', {
@@ -102,7 +160,10 @@ function TableBHA() {
             console.error('Error:', error);
             alert('Error sending file.');
         } finally {
-            setLoading(false); // Hide spinner
+            setLoading(false);
+            if (messageIntervalRef.current) clearInterval(messageIntervalRef.current);
+            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+        
         }
     };
         
@@ -135,6 +196,41 @@ function TableBHA() {
         })));
     };
 
+        // Drag and Drop Handlers
+        const handleDragOver = (event) => {
+            event.preventDefault(); // Necessary to allow the drop
+        };
+
+        const handleDrop = (event) => {
+            event.preventDefault();
+            const files = event.dataTransfer.files;
+            if (files.length) {
+                setFile(files[0]);
+                setButtonDisabled(false);
+                // Set default AI model and prompt
+                setSelectedAI("gpt-4-turbo"); // Assuming you want to default to 'gpt-4-turbo'
+                setSelectedPrompt({
+                    id: '1', 
+                    text: 'Prompt 1', 
+                    details: '(most specified)',
+                    value: 'Please extract the following parameters in this document and return a json formatted structure with the data. Only return the json object and nothing else.\
+                    The document should be something related to a Bottom Hole Assembly (BHA) used in when drilling oil wells. It will consist of many components with unique properties for each component, as well as their own dimensions, lengths etc.\
+                    Use the following parameter names in the json object:\
+                     - “Component Name”  - Look for a parameter that may be called something like “description” \"name\" something similar to that context, basically the name of each component in the BHA.\
+                    - \"Length\" - if there is any information about the length of individual components, place that here.\
+                    - \"Weight\" - look for a parameter that may be called \"weight\" or something similar. \
+                    - \"Grade\" - If there is any information about a steel property for each component named \"grade\" or something that resembles this, then place it here.\
+                    - \“Body OD\” - Look for a parameter that may be called something like “outer diameter” or something similar to that for the string body, or just try to guess based on the data.\
+                    - \"Body ID\" - Look for a parameter that may be called something like “inner diameter” or something similar to that for the string body, or just try to guess based on the data.\
+                    - \“Connection OD\” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.\
+                    - \“Connection ID\” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.\
+                    Make sure you get all of the points and always only use a number for all parameters except Component Name which is a string. Always respond with all of the parameters per component even if they are empty. We want to order the json object with drill pipe at the top, so if the data shows components from the bottom up (such as a drill bit or similar as the first component) then return your response with the last component first and then go in that order.'
+                });
+                handleExecute();
+            }
+        };
+    
+
     const [isExpanded, setIsExpanded] = useState(false);
     const toggleAccordion = () => {
         setIsExpanded(!isExpanded);
@@ -147,6 +243,7 @@ function TableBHA() {
                 <Icon name="upload" onClick={() => fileInputRef.current.click()} style={{ cursor: 'pointer', position: 'absolute', right: '20px', top: '5px' }} />
                 <input type="file" ref={fileInputRef} onChange={(e) => console.log("File uploaded:", e.target.files[0])} style={{ display: 'none' }} />
             </div>
+            <div onDragOver={handleDragOver} onDrop={handleDrop} style={{ width: '100%' }}>
             <Table
                 table={{
                     columnWidths: ['200px', '100px', '100px', 'auto', '100px', '100px', '100px', '100px'],
@@ -164,7 +261,23 @@ function TableBHA() {
                         cells: Object.values(item).map(value => ({ value }))
                     }))
                 }}
-            />
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}        
+            /> </div>
+      
+      
+        <div id="loading content" style={{ display: loading ? 'block' : 'none' }}>
+        <Divider />
+            <Grid columns="1fr 4fr">
+                <Text>Loading... {currentMessage}</Text>
+                <ProgressBar
+                    colored
+                    percentage={progress}
+                    width="100%"
+                />
+            </Grid>
+         </div>
+
 
 <Divider />
 
@@ -248,6 +361,8 @@ function TableBHA() {
 
 
         </Card>
+        
+        
     );
 }
 

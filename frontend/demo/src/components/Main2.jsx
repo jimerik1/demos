@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Page, Heading, Button, Flex, Divider, Tabs } from '@oliasoft-open-source/react-ui-library';
+import { Page, Heading, Button, Flex, Divider, Tabs, Drawer, Icon } from '@oliasoft-open-source/react-ui-library';
 import TableBHA from './TableBHA';
 
 function Main2() {
@@ -7,6 +7,7 @@ function Main2() {
 
 
     return (
+        <div>
         <Page>
             <Heading top>AI Parser for Tables</Heading>
             <Tabs
@@ -31,7 +32,9 @@ function Main2() {
                 {selectedTab.value === 3 && <div><h3>Tab 3 Content</h3></div>}
                 {selectedTab.value === 4 && <div><h3>Disabled Content</h3></div>}
             </div>
+           
         </Page>
+        </div>
     );
 }
 
