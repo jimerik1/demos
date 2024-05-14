@@ -13,11 +13,11 @@ app.use(express.json());
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Load API key from environment variables for better security
+// Load API key from environment variables 
 const apiKeyOpenAI = process.env.API_KEY;
 console.log(apiKeyOpenAI);
 
-// Load system prompts from external file
+// Load system prompts from external file (Only used for "Ask AI" feature)
 const systemPrompts = JSON.parse(fs.readFileSync('./systemPrompts.json', 'utf8'));
 
 // Function to send payload to OpenAI API and parse the response

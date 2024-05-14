@@ -21,7 +21,7 @@ function Main() {
     return (
 
         <Page>
-        <Heading top>AI Parser for Tables</Heading>
+        <Heading top>Multiply one number with another</Heading>
   
         <div className="middle-column">
             <input type="number" value={number1} onChange={e => setNumber1(e.target.value)} />
