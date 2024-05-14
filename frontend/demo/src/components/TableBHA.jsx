@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Table, Card, Heading, Icon, Flex, Divider, Button, Grid, Message, Select, Accordion, Text, ProgressBar, Menu } from '@oliasoft-open-source/react-ui-library';
+import { Table, Card, Heading, Icon, Flex, Divider, Button, Grid, Message, Select, Accordion, Text, ProgressBar, Menu, Modal, Dialog, TextArea } from '@oliasoft-open-source/react-ui-library';
 import Prompts from './Prompts';
 
 function TableBHA() {
@@ -131,6 +131,72 @@ function TableBHA() {
     const messageIntervalRef = useRef(null);
     const progressIntervalRef = useRef(null);
 
+    //State for modal visibility and input
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [modalInputValue, setModalInputValue] = useState("");
+
+    //Toggle Modal visibility
+    const toggleModal = () => {
+        setIsModalVisible(!isModalVisible);
+    };
+
+    //Handle modal input change
+    const handleModalInputChange = (event) => {
+        setModalInputValue(event.target.value);
+    };
+
+    //Handle modal execute
+    const handleModalExecute = async () => {
+        if (!selectedAI) {
+            alert('Please select an AI model before executing.');
+            return;
+        }
+    
+        console.log("Executing with input:", modalInputValue);
+        setIsModalVisible(false);
+        setLoading(true);
+        setProgress(0);
+        setCurrentMessage(messages[0]);
+        startMessageInterval();
+        startProgressInterval();
+    
+        const startTime = Date.now(); // Capture start time
+        try {
+            const response = await fetch('http://localhost:3001/ask-ai', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    prompt: modalInputValue,
+                    model: selectedAI,
+                    index: "bha"  // Use the appropriate index for the system prompt
+                })
+            });
+    
+            if (response.ok) {
+                const newData = await response.json();
+                const endTime = Date.now();  // Capture end time
+                setFetchTime((endTime - startTime) / 1000);  // Calculate total time in seconds
+                console.log(newData);  // Log the response to check its structure
+    
+                setData(newData);
+                setPromptResponse(JSON.stringify(newData, null, 2));
+            } else {
+                throw new Error('Network response was not ok');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error sending request to AI.');
+        } finally {
+            setLoading(false);
+            if (messageIntervalRef.current) clearInterval(messageIntervalRef.current);
+            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+        }
+    };
+        
+    
+
     useEffect(() => {
         return () => {
             // Cleanup intervals when component unmounts or loading stops
@@ -241,12 +307,7 @@ function TableBHA() {
                 setFetchTime((endTime - startTime) / 1000);  // Calculate total time in seconds
                 console.log(newData);  // Log the response to check its structure
 
-                // Normalize data if it comes in a nested structure
-                if (newData.components) {
-                    newData = newData.components;
-                }
-    
-                setData(newData);  // Update the state with the new data
+                setData(newData);
                 setPromptResponse(JSON.stringify(newData, null, 2));
             } else {
                 throw new Error('Network response was not ok');
@@ -341,7 +402,8 @@ function TableBHA() {
                         table={{
                             actions: [
                                 {
-                                  childComponent: <Menu menu={{label: 'Ask the AI', sections: [{label: 'Ask AI to generate BHA', type: 'Option'}, {label: 'Ask AI to fix existing BHA', type: 'Option'}], small: true, trigger: 'DropDownButton'}} />
+                                  childComponent: 
+                                    <Menu menu={{ label: 'Ask the AI', sections: [{ label: 'Ask AI to generate BHA', type: 'Option', onClick: toggleModal }, { label: 'Ask AI to fix existing BHA', type: 'Option' }], small: true, trigger: 'DropDownButton' }} />
                                 }
                               ],
                           
@@ -446,6 +508,27 @@ function TableBHA() {
                         <Text>Total time for fetching response: {fetchTime} seconds</Text>
                     </Grid>
                 </Accordion>
+
+                <Modal visible={isModalVisible} centered>
+    <Dialog 
+        dialog={{
+            heading: 'Ask AI to Generate BHA',
+            content: (
+                <div>
+                    <TextArea value={modalInputValue} onChange={handleModalInputChange} placeholder="Enter your custom prompt here..." />
+                </div>
+            ),
+            footer: (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                    <Button label="Cancel" onClick={toggleModal} />
+                    <Button label="Execute" onClick={handleModalExecute} />
+                </div>
+            ),
+            onClose: toggleModal
+        }} 
+    />
+</Modal>
+
             </Card>
         </div>
     );

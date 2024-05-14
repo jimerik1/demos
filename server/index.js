@@ -2,6 +2,7 @@ const cors = require('cors');
 const express = require('express');
 const multer = require('multer');
 const axios = require('axios');
+const fs = require('fs');  // Import the file system module
 const app = express();
 require('dotenv').config();
 
@@ -15,6 +16,9 @@ const upload = multer({ storage: storage });
 // Load API key from environment variables for better security
 const apiKeyOpenAI = process.env.API_KEY;
 console.log(apiKeyOpenAI);
+
+// Load system prompts from external file
+const systemPrompts = JSON.parse(fs.readFileSync('./systemPrompts.json', 'utf8'));
 
 // Function to send payload to OpenAI API and parse the response
 async function sendToAPI(fileBuffer, promptText, model) {
@@ -57,8 +61,8 @@ async function sendToAPI(fileBuffer, promptText, model) {
             const messageContent = response.data.choices[0].message.content;
             console.log("OpenAI Response:", messageContent);
 
-                        // Debug: Log the string to be parsed
-                        console.log("JSON String to be parsed:", messageContent);
+            // Debug: Log the string to be parsed
+            console.log("JSON String to be parsed:", messageContent);
 
             // Extract JSON from formatted message content
             const jsonStartIndex = messageContent.indexOf('json\n') + 'json\n'.length;
@@ -103,6 +107,62 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     }
 });
 
+// New endpoint to handle "Ask AI" requests
+app.post('/ask-ai', async (req, res) => {
+    console.log("Received request on /ask-ai");
+    console.log("Request body:", req.body); // Log the request body for debugging
+
+    const { prompt, model, index } = req.body;
+
+    if (!prompt || !model || !index) {
+        console.log("Missing required parameters");
+        return res.status(400).json({ message: "Prompt, model, and index are required." });
+    }
+
+    // Get the system prompt based on the index
+    const systemPrompt = systemPrompts[index] || systemPrompts["default"];
+
+    const payload = {
+        model: model,
+        messages: [
+            {
+                role: "system",
+                content: systemPrompt
+            },
+            {
+                role: "user",
+                content: prompt
+            }
+        ],
+        max_tokens: 3000,
+        temperature: 0.7
+    };
+
+    const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKeyOpenAI}`
+    };
+
+    try {
+        const response = await axios.post('https://api.openai.com/v1/chat/completions', payload, { headers });
+        if (response.data.choices && response.data.choices.length > 0) {
+            let messageContent = response.data.choices[0].message.content;
+            console.log("OpenAI Response:", messageContent);
+
+            // Clean the JSON response by removing markdown code fences
+            messageContent = messageContent.replace(/```json|```/g, '').trim();
+
+            // Parse the cleaned JSON string into an object
+            const jsonObject = JSON.parse(messageContent);
+            res.json(jsonObject);
+        } else {
+            res.status(500).json({ message: "No valid response from OpenAI." });
+        }
+    } catch (error) {
+        console.error('Error processing the response:', error);
+        res.status(500).json({ message: "Error processing your request.", error: error.toString() });
+    }
+});
 
 // Start the server
 const PORT = process.env.PORT || 3001;
