@@ -110,36 +110,15 @@ async function sendToAssistantAPI(fileBuffer, fileName, promptText, model) {
         const fileId = fileUploadResponse.data.id;
         console.log("File uploaded, file ID:", fileId);
 
-        // Step 2: List all vector stores to verify the existing vector store ID
-        const listVectorStoresResponse = await axios.get(
-            'https://api.openai.com/v1/vector_stores',
-            {
-                headers: {
-                    'Authorization': `Bearer ${API_KEY}`,
-                    'Content-Type': 'application/json',
-                    'OpenAI-Beta': 'assistants=v2', // Set the OpenAI-Beta header
-                },
-            }
-        );
-        const vectorStores = listVectorStoresResponse.data.data;
-        console.log("Available vector stores:", vectorStores);
+        // Use your manually created vector store ID
+        const existingVectorStoreId = 'vs_vjFY5WAzigvMqjLWo3WGm8rp'; 
+        const existingAssistantId = 'asst_rvd8F1pWd5uuEymT9ZuLIGds';
 
-        // Verify the existing vector store ID
-        const existingVectorStoreId = 'vs_vjFY5WAzigvMqjLWo3WGm8rp'; // Use your manually created vector store ID
-        const vectorStore = vectorStores.find(store => store.id === existingVectorStoreId);
-        
-        if (!vectorStore) {
-            console.error(`Vector store with ID ${existingVectorStoreId} not found`);
-            return;
-        }
-
-        console.log("Vector store verified:", vectorStore);
-
-        // Step 3: Add the file to the existing vector store
+        // Step 2: Attach the uploaded file to the existing vector store
         await axios.post(
             `https://api.openai.com/v1/vector_stores/${existingVectorStoreId}/files`,
             {
-                file_id: fileId,
+                file_id: fileId
             },
             {
                 headers: {
@@ -151,7 +130,7 @@ async function sendToAssistantAPI(fileBuffer, fileName, promptText, model) {
         );
         console.log("File added to vector store");
 
-        // Step 4: Create a new thread with the prompt and file attached
+        // Step 3: Create a new thread with the prompt and file attached
         const threadResponse = await axios.post(
             'https://api.openai.com/v1/threads',
             {
@@ -167,6 +146,11 @@ async function sendToAssistantAPI(fileBuffer, fileName, promptText, model) {
                         ],
                     },
                 ],
+                tool_resources: {
+                    file_search: {
+                        vector_store_ids: [existingVectorStoreId],
+                    },
+                },
             },
             {
                 headers: {
@@ -179,11 +163,11 @@ async function sendToAssistantAPI(fileBuffer, fileName, promptText, model) {
         const threadId = threadResponse.data.id;
         console.log("Thread created, thread ID:", threadId);
 
-        // Step 5: Create a run on the thread with the specified assistant
+        // Step 4: Create a run on the thread with the specified assistant
         const runResponse = await axios.post(
             `https://api.openai.com/v1/threads/${threadId}/runs`,
             {
-                assistant_id: "asst_rvd8F1pWd5uuEymT9ZuLIGds", // Updated assistant ID
+                assistant_id: existingAssistantId, // Use your existing assistant ID
                 model: model,
             },
             {
@@ -198,14 +182,14 @@ async function sendToAssistantAPI(fileBuffer, fileName, promptText, model) {
         const runId = runResponse.data.id;
         console.log("Run created:", runResponse.data);
 
-        // Step 6: Poll for run status until completed
+        // Step 5: Poll for run status until completed
         await pollRunStatus(threadId, runId);
 
-        // Step 7: Retrieve the final message content from the thread
+        // Step 6: Retrieve the final message content from the thread
         const finalMessageContent = await retrieveFinalMessage(threadId, runId);
         console.log("Final message content:", finalMessageContent);
 
-        // Step 8: Extract and format JSON content
+        // Step 7: Extract and format JSON content
         if (Array.isArray(finalMessageContent) && finalMessageContent.length > 0 && finalMessageContent[0].type === 'text') {
             const messageText = finalMessageContent[0].text.value;
             const jsonStartIndex = messageText.indexOf('json\n') + 'json\n'.length;
