@@ -125,7 +125,35 @@ function TableBHA() {
         "Summoning the magic.",
         "Summoning the magic..",
         "Processing data...",
+        "Finalizing.",
+        "Finalizing..",
         "Finalizing...",
+        "Finalizing",
+        "Finalizing.",
+        "Finalizing..",
+        "Finalizing...",
+        "Finalizing.",
+        "Finalizing..",
+        "Finalizing...",
+        "Finalizing.",
+        "Finalizing..",
+        "AI Hickups",
+        "AI Hickups.",
+        "AI Hickups..",
+        "AI Hickups...",
+        "AI Hickups...",
+        "Very soon now.",
+        "Very soon now..",
+        "Very soon now...",
+        "Very soon now.",
+        "Very soon now..",
+        "Very soon now...",
+        "Very soon now.",
+        "Very soon now..",
+        "Very soon now...",
+        "Very soon now.",
+        "Very soon now..",
+        "Very soon now...",
         "Complete"
     ];
     
@@ -416,7 +444,7 @@ function TableBHA() {
             setButtonDisabled(false);
             // Set default AI model and prompt
             setSelectedAI("gpt-4o"); // default set to 'gpt-4o'
-            setModeAI("normal"); //
+            setModeAI("choose"); //
             setSelectedPrompt({
                 id: '1',
                 text: 'Prompt 1',
@@ -511,6 +539,7 @@ function TableBHA() {
                             onChange={handleAIChange}
                             value={selectedAI}
                             options={[
+                                { label: 'Select AI Engine', type: 'Heading' },
                                 { label: 'GPT 4o', value: 'gpt-4o', details: 'Open AI' },
                                 { label: 'GPT 4 Turbo', value: 'gpt-4-turbo', details: 'Open AI' },
                                 { label: 'GPT 3.5 Turbo', value: 'gpt-3.5-turbo', details: 'Open AI' },
@@ -529,7 +558,9 @@ function TableBHA() {
                             onChange={handleModeAI}
                             value={modeAI}
                             options={[
-                                { label: 'Normal', value: 'normal', details: '(default)' },
+                                { label: 'AI Mode', type: 'Heading'},
+                                { label: 'Choose for me', value: 'choose', details: '(default)'},
+                                { label: 'Normal', value: 'normal' },
                                 { label: 'Assistant', value: 'assistant' },
 
                             ]}

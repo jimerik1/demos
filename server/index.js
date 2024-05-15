@@ -34,6 +34,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     
     try {
         let data;
+
         if (req.body.modeAI === 'normal') {
             data = await sendToAPI(req.file.buffer, req.body.prompt, req.body.model);
         } else if (req.body.modeAI === 'assistant') {
@@ -43,11 +44,25 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     
             const response = await sendToAssistantAPI(fileBuffer, fileName, prompt, model);
             res.json(response);
-    
 
+        } else if (req.body.modeAI === 'choose') {
+            const fileBuffer = req.file.buffer;
+            const fileName = req.file.originalname;
+            const fileExtension = fileName.split('.').pop().toLowerCase();
+
+            const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff'];
+
+            if (imageExtensions.includes(fileExtension)) {
+                console.log("File is an image, using sendToAPI");
+                data = await sendToAPI(fileBuffer, req.body.prompt, req.body.model);
             } else {
+                console.log("File is not an image, using sendToAssistantAPI");
+                data = await sendToAssistantAPI(fileBuffer, fileName, req.body.prompt, req.body.model);
+            }
+        } else {
             throw new Error("Invalid AI Mode");
         }
+
         res.json(data);
     } catch (error) {
         console.error("Error processing your request:", error);
