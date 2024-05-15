@@ -42,6 +42,7 @@ function TableBHA() {
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentMessage, setCurrentMessage] = useState("");
+    const [modeAI, setModeAI] = useState("");
     const messages = [
         "Initializing upload",
         "Initializing upload.",
@@ -220,6 +221,11 @@ function TableBHA() {
         setSelectedAI(event.target.value);
     };
 
+    // modeAI handler
+    const handleModeAI = (event) => {
+        setModeAI(event.target.value);
+    };
+
     // Example function that uses the selectedAI state
     const executeWithAI = () => {
         console.log("Selected AI engine:", selectedAI);
@@ -295,9 +301,54 @@ function TableBHA() {
         formData.append('file', file);
         formData.append('model', selectedAI);
         formData.append('prompt', selectedPrompt.value); // Use the selected prompt value
+        formData.append('modeAI', modeAI); // Use the selected mode AI value
     
         try {
             const response = await fetch('http://localhost:3001/upload', {
+                method: 'POST',
+                body: formData,
+            });
+            if (response.ok) {
+                const newData = await response.json();  // Assuming the response is JSON
+                const endTime = Date.now();  // Capture end time
+                setFetchTime((endTime - startTime) / 1000);  // Calculate total time in seconds
+                console.log(newData);  // Log the response to check its structure
+
+                setData(newData);
+                setPromptResponse(JSON.stringify(newData, null, 2));
+            } else {
+                throw new Error('Network response was not ok');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error sending file.');
+        } finally {
+            setLoading(false);
+            if (messageIntervalRef.current) clearInterval(messageIntervalRef.current);
+            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+        }
+    };
+
+    const handleExecuteAssistant = async () => {
+        if (!file) {
+            alert("Please upload a file first.");
+            return;
+        }
+    
+        const startTime = Date.now(); // Capture start time
+        setLoading(true);
+        setProgress(0);
+        setCurrentMessage(messages[0]);
+        startMessageInterval();
+        startProgressInterval();
+    
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('model', selectedAI);
+        formData.append('prompt', selectedPrompt.value); // Use the selected prompt value
+    
+        try {
+            const response = await fetch('http://localhost:3001/uploadAssistant', {
                 method: 'POST',
                 body: formData,
             });
@@ -365,6 +416,7 @@ function TableBHA() {
             setButtonDisabled(false);
             // Set default AI model and prompt
             setSelectedAI("gpt-4o"); // default set to 'gpt-4o'
+            setModeAI("normal"); //
             setSelectedPrompt({
                 id: '1',
                 text: 'Prompt 1',
@@ -472,6 +524,19 @@ function TableBHA() {
                         />
 
                         <Prompts onSelect={(prompt) => setSelectedPrompt(prompt)} value={selectedPrompt.id} />
+
+                        <Select
+                            onChange={handleModeAI}
+                            value={modeAI}
+                            options={[
+                                { label: 'Normal', value: 'normal', details: '(default)' },
+                                { label: 'Assistant', value: 'assistant' },
+
+                            ]}
+                            placeholder="Select AI Mode"
+                            searchable
+                            width="auto"
+                        />
 
                         <Button
                             colored
