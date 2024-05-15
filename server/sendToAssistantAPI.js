@@ -164,10 +164,35 @@ async function deleteFile(fileId) {
     }
 }
 
+async function deleteThread(threadId) {
+    try {
+        const response = await axios.delete(
+            `https://api.openai.com/v1/threads/${threadId}`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${API_KEY}`,
+                    'OpenAI-Beta': 'assistants=v2',
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+        console.log(`Thread ${threadId} deleted successfully:`, response.data);
+    } catch (error) {
+        console.error(`Error deleting thread ${threadId}:`, error);
+        if (error.response) {
+            console.error('Error response data:', error.response.data);
+            console.error('Error response status:', error.response.status);
+        } else {
+            console.error('Error:', error.message);
+        }
+    }
+}
+
 async function sendToAssistantAPI(fileBuffer, fileName, promptText, model) {
     console.log("sendToAssistantAPI triggered");
 
     let fileId;
+    let threadId;
     try {
         await listVectorStores();
 
@@ -222,7 +247,7 @@ async function sendToAssistantAPI(fileBuffer, fileName, promptText, model) {
                 },
             }
         );
-        const threadId = threadResponse.data.id;
+        threadId = threadResponse.data.id;
         console.log("Thread created, thread ID:", threadId);
 
         const runResponse = await axios.post(
@@ -249,15 +274,12 @@ async function sendToAssistantAPI(fileBuffer, fileName, promptText, model) {
         console.log("Final message content:", finalMessageContent);
 
         if (Array.isArray(finalMessageContent) && finalMessageContent.length > 0 && finalMessageContent[0].type === 'text') {
-            const messageText = finalMessageContent[0].text.value;
-            const jsonStartIndex = messageText.indexOf('json\n') + 'json\n'.length;
-            let jsonString = messageText.substring(jsonStartIndex);
-            jsonString = jsonString.replace(/`/g, '');
-            jsonString = jsonString.trim();
+            let messageText = finalMessageContent[0].text.value;
+            messageText = messageText.replace(/```json|```/g, '').trim(); // Remove markdown code block markers and trim whitespace
 
-            console.log("JSON String to be parsed:", jsonString);
+            console.log("Cleaned JSON String to be parsed:", messageText);
 
-            const jsonObject = JSON.parse(jsonString);
+            const jsonObject = JSON.parse(messageText); // Parse the cleaned JSON string
 
             console.log("Parsed JSON Object:", jsonObject);
             return jsonObject;
@@ -275,6 +297,9 @@ async function sendToAssistantAPI(fileBuffer, fileName, promptText, model) {
     } finally {
         if (fileId) {
             await deleteFile(fileId);
+        }
+        if (threadId) { // Ensure threadId is defined before attempting to delete
+            await deleteThread(threadId);
         }
     }
 }
