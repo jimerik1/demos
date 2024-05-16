@@ -3,6 +3,7 @@ const FormData = require('form-data');
 require('dotenv').config();
 
 const { API_KEY } = process.env;
+console.log(API_KEY);
 
 async function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -214,7 +215,7 @@ async function sendToAssistantAPI(fileBuffer, fileName, promptText, model) {
         console.log("File uploaded, file ID:", fileId);
 
         const existingVectorStoreId = 'vs_vjFY5WAzigvMqjLWo3WGm8rp';
-        const existingAssistantId = 'asst_rvd8F1pWd5uuEymT9ZuLIGds';
+        const existingAssistantId = 'asst_PWDU6iDMlBEtIFPNpbiVHv0Q';
 
         await attachFileToVectorStore(fileId, existingVectorStoreId);
 

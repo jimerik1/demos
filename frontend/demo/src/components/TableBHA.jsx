@@ -32,6 +32,14 @@ function TableBHA() {
         }
     ];
 
+    // Filter function to remove unwanted parameters
+    const filterData = (data) => {
+        return data.map(item => {
+            const { "Length Unit": _, "Weight Unit": __, "Body OD Unit": ___, "Comments": ____, ...filteredItem } = item;
+            return filteredItem;
+        });
+    };
+
     // Set constants
     const [promptResponse, setPromptResponse] = useState("Response from LLM will be displayed here");
     const [file, setFile] = useState(null);
@@ -44,119 +52,45 @@ function TableBHA() {
     const [currentMessage, setCurrentMessage] = useState("");
     const [modeAI, setModeAI] = useState("");
     const messages = [
-        "Initializing upload",
-        "Initializing upload.",
-        "Initializing upload..",
-        "Initializing upload...",
-        "Reading payload",
-        "Reading payload.",
-        "Reading payload..",
-        "Reading payload...",
-        "Diving into the details",
-        "Diving into the details.",
-        "Diving into the details..",
-        "interesting",
-        "interesting.",
-        "interesting..",
-        "I think I have it now",
-        "I think I have it now.",
-        "I think I have it now..",
-        "Unpacking the mysteries of the universe",
-        "Unpacking the mysteries of the universe.",
-        "Unpacking the mysteries of the universe..",
-        "Summoning data wizards",
-        "Summoning data wizards.",
-        "Summoning data wizards..",
-        "Converting caffeine into code",
-        "Converting caffeine into code.",
-        "Converting caffeine into code..",
-        "Finding Waldo",
-        "Finding Waldo.",
-        "Finding Waldo..",
-        "Herding digital cats",
-        "Herding digital cats.",
-        "Herding digital cats..",
-        "Charging flux capacitor",
-        "Charging flux capacitor.",
-        "Charging flux capacitor..",
-        "Assembling Avengers",
-        "Assembling Avengers.",
-        "Assembling Avengers..",
-        "Polishing pixels",
-        "Polishing pixels.",
-        "Polishing pixels..",
-        "Engaging warp drive",
-        "Engaging warp drive.",
-        "Engaging warp drive..",
-        "Reticulating splines",
-        "Reticulating splines.",
-        "Reticulating splines..",
-        "Preparing dance moves",
-        "Preparing dance moves.",
-        "Preparing dance moves..",
-        "Almost there",
-        "Almost there.",
-        "Almost there..",
-        "Patience, young padawan",
-        "Patience, young padawan.",
-        "Patience, young padawan..",
-        "Calculating the meaning of life",
-        "Calculating the meaning of life.",
-        "Calculating the meaning of life..",
-        "Just a sec... or two",
-        "Just a sec... or two.",
-        "Just a sec... or two..",
-        "Channeling my inner Einstein",
-        "Channeling my inner Einstein.",
-        "Channeling my inner Einstein..",
-        "Hacking the mainframe",
-        "Hacking the mainframe.",
-        "Hacking the mainframe..",
-        "Decoding the Matrix",
-        "Decoding the Matrix.",
-        "Decoding the Matrix..",
-        "Loading... still loading",
-        "Loading... still loading.",
-        "Loading... still loading..",
-        "Uploading the awesomeness",
-        "Uploading the awesomeness.",
-        "Uploading the awesomeness..",
-        "Summoning the magic",
-        "Summoning the magic.",
-        "Summoning the magic..",
-        "Processing data...",
-        "Finalizing.",
-        "Finalizing..",
-        "Finalizing...",
-        "Finalizing",
-        "Finalizing.",
-        "Finalizing..",
-        "Finalizing...",
-        "Finalizing.",
-        "Finalizing..",
-        "Finalizing...",
-        "Finalizing.",
-        "Finalizing..",
-        "AI Hickups",
-        "AI Hickups.",
-        "AI Hickups..",
-        "AI Hickups...",
-        "AI Hickups...",
-        "Very soon now.",
-        "Very soon now..",
-        "Very soon now...",
-        "Very soon now.",
-        "Very soon now..",
-        "Very soon now...",
-        "Very soon now.",
-        "Very soon now..",
-        "Very soon now...",
-        "Very soon now.",
-        "Very soon now..",
-        "Very soon now...",
+        "Initializing upload", "Initializing upload.", "Initializing upload..", "Initializing upload...",
+        "Reading payload", "Reading payload.", "Reading payload..", "Reading payload...",
+        "Diving into the details", "Diving into the details.", "Diving into the details..",
+        "interesting", "interesting.", "interesting..",
+        "I think I have it now", "I think I have it now.", "I think I have it now..",
+        "Unpacking the mysteries of the universe", "Unpacking the mysteries of the universe.", "Unpacking the mysteries of the universe..",
+        "Summoning data wizards", "Summoning data wizards.", "Summoning data wizards..",
+        "Converting caffeine into code", "Converting caffeine into code.", "Converting caffeine into code..",
+        "Finding Waldo", "Finding Waldo.", "Finding Waldo..",
+        "Herding digital cats", "Herding digital cats.", "Herding digital cats..",
+        "Charging flux capacitor", "Charging flux capacitor.", "Charging flux capacitor..",
+        "Assembling Avengers", "Assembling Avengers.", "Assembling Avengers..",
+        "Polishing pixels", "Polishing pixels.", "Polishing pixels..",
+        "Engaging warp drive", "Engaging warp drive.", "Engaging warp drive..",
+        "Reticulating splines", "Reticulating splines.", "Reticulating splines..",
+        "Preparing dance moves", "Preparing dance moves.", "Preparing dance moves..",
+        "Almost there", "Almost there.", "Almost there..",
+        "Patience, young padawan", "Patience, young padawan.", "Patience, young padawan..",
+        "Calculating the meaning of life", "Calculating the meaning of life.", "Calculating the meaning of life..",
+        "Just a sec... or two", "Just a sec... or two.", "Just a sec... or two..",
+        "Channeling my inner Einstein", "Channeling my inner Einstein.", "Channeling my inner Einstein..",
+        "Hacking the mainframe", "Hacking the mainframe.", "Hacking the mainframe..",
+        "Decoding the Matrix", "Decoding the Matrix.", "Decoding the Matrix..",
+        "Loading... still loading", "Loading... still loading.", "Loading... still loading..",
+        "Uploading the awesomeness", "Uploading the awesomeness.", "Uploading the awesomeness..",
+        "Summoning the magic", "Summoning the magic.", "Summoning the magic..",
+        "Processing data...", "Finalizing.", "Finalizing..", "Finalizing...",
+        "Finalizing", "Finalizing.", "Finalizing..", "Finalizing...",
+        "Finalizing.", "Finalizing..", "Finalizing...",
+        "Finalizing.", "Finalizing..", "Finalizing...",
+        "AI Hickups", "AI Hickups.", "AI Hickups..", "AI Hickups...",
+        "AI Hickups...", "Very soon now.", "Very soon now..", "Very soon now...",
+        "Very soon now.", "Very soon now..", "Very soon now...",
+        "Very soon now.", "Very soon now..", "Very soon now...",
+        "Very soon now.", "Very soon now..", "Very soon now...",
         "Complete"
-    ];
+      ];
     
+
     const messageIntervalRef = useRef(null);
     const progressIntervalRef = useRef(null);
 
@@ -180,7 +114,7 @@ function TableBHA() {
             alert('Please select an AI model before executing.');
             return;
         }
-    
+
         console.log("Executing with input:", modalInputValue);
         setIsModalVisible(false);
         setLoading(true);
@@ -188,7 +122,7 @@ function TableBHA() {
         setCurrentMessage(messages[0]);
         startMessageInterval();
         startProgressInterval();
-    
+
         const startTime = Date.now(); // Capture start time
         try {
             const response = await fetch('http://localhost:3001/ask-ai', {
@@ -202,15 +136,16 @@ function TableBHA() {
                     index: "bha"  // Use the appropriate index for the system prompt
                 })
             });
-    
+
             if (response.ok) {
                 const newData = await response.json();
                 const endTime = Date.now();  // Capture end time
                 setFetchTime((endTime - startTime) / 1000);  // Calculate total time in seconds
                 console.log(newData);  // Log the response to check its structure
-    
-                setData(newData);
-                setPromptResponse(JSON.stringify(newData, null, 2));
+
+                const filteredData = filterData(newData); // Filter the data before setting state
+                setData(filteredData);
+                setPromptResponse(JSON.stringify(filteredData, null, 2));
             } else {
                 throw new Error('Network response was not ok');
             }
@@ -223,8 +158,6 @@ function TableBHA() {
             if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
         }
     };
-        
-    
 
     useEffect(() => {
         return () => {
@@ -259,6 +192,7 @@ function TableBHA() {
         console.log("Selected AI engine:", selectedAI);
         // You can now use selectedAI as an input to any function
     };
+
     const [selectedPrompt, setSelectedPrompt] = useState({
         id: '1',
         text: 'Prompt 1 (default)',
@@ -317,20 +251,20 @@ function TableBHA() {
             alert("Please upload a file first.");
             return;
         }
-    
+
         const startTime = Date.now(); // Capture start time
         setLoading(true);
         setProgress(0);
         setCurrentMessage(messages[0]);
         startMessageInterval();
         startProgressInterval();
-    
+
         const formData = new FormData();
         formData.append('file', file);
         formData.append('model', selectedAI);
         formData.append('prompt', selectedPrompt.value); // Use the selected prompt value
         formData.append('modeAI', modeAI); // Use the selected mode AI value
-    
+
         try {
             const response = await fetch('http://localhost:3001/upload', {
                 method: 'POST',
@@ -342,8 +276,9 @@ function TableBHA() {
                 setFetchTime((endTime - startTime) / 1000);  // Calculate total time in seconds
                 console.log(newData);  // Log the response to check its structure
 
-                setData(newData);
-                setPromptResponse(JSON.stringify(newData, null, 2));
+                const filteredData = filterData(newData); // Filter the data before setting state
+                setData(filteredData);
+                setPromptResponse(JSON.stringify(filteredData, null, 2));
             } else {
                 throw new Error('Network response was not ok');
             }
@@ -362,19 +297,19 @@ function TableBHA() {
             alert("Please upload a file first.");
             return;
         }
-    
+
         const startTime = Date.now(); // Capture start time
         setLoading(true);
         setProgress(0);
         setCurrentMessage(messages[0]);
         startMessageInterval();
         startProgressInterval();
-    
+
         const formData = new FormData();
         formData.append('file', file);
         formData.append('model', selectedAI);
         formData.append('prompt', selectedPrompt.value); // Use the selected prompt value
-    
+
         try {
             const response = await fetch('http://localhost:3001/uploadAssistant', {
                 method: 'POST',
@@ -386,8 +321,9 @@ function TableBHA() {
                 setFetchTime((endTime - startTime) / 1000);  // Calculate total time in seconds
                 console.log(newData);  // Log the response to check its structure
 
-                setData(newData);
-                setPromptResponse(JSON.stringify(newData, null, 2));
+                const filteredData = filterData(newData); // Filter the data before setting state
+                setData(filteredData);
+                setPromptResponse(JSON.stringify(filteredData, null, 2));
             } else {
                 throw new Error('Network response was not ok');
             }
@@ -606,24 +542,24 @@ function TableBHA() {
                 </Accordion>
 
                 <Modal visible={isModalVisible} centered>
-    <Dialog 
-        dialog={{
-            heading: 'Ask AI to Generate BHA',
-            content: (
-                <div>
-                    <TextArea value={modalInputValue} onChange={handleModalInputChange} placeholder="Enter your custom prompt here..." />
-                </div>
-            ),
-            footer: (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                    <Button label="Cancel" onClick={toggleModal} />
-                    <Button label="Execute" onClick={handleModalExecute} />
-                </div>
-            ),
-            onClose: toggleModal
-        }} 
-    />
-</Modal>
+                    <Dialog 
+                        dialog={{
+                            heading: 'Ask AI to Generate BHA',
+                            content: (
+                                <div>
+                                    <TextArea value={modalInputValue} onChange={handleModalInputChange} placeholder="Enter your custom prompt here..." />
+                                </div>
+                            ),
+                            footer: (
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                                    <Button label="Cancel" onClick={toggleModal} />
+                                    <Button label="Execute" onClick={handleModalExecute} />
+                                </div>
+                            ),
+                            onClose: toggleModal
+                        }} 
+                    />
+                </Modal>
 
             </Card>
         </div>
