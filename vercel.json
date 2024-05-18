@@ -1,0 +1,11 @@
+{
+    "projects": {
+      "frontend": {
+        "rootDirectory": "frontend/demo"
+      },
+      "server": {
+        "rootDirectory": "server"
+      }
+    }
+  }
+  
