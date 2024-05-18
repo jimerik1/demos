@@ -9,7 +9,7 @@ async function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function pollRunStatus(threadId, runId) {
+async function pollRunStatus(threadId, runId, retries = 3) {
     const maxAttempts = 30;
     const delayMs = 2000;
 
@@ -33,7 +33,13 @@ async function pollRunStatus(threadId, runId) {
         }
 
         if (runStatus === 'failed' || runStatus === 'cancelled') {
-            throw new Error(`Run ${runStatus}`);
+            if (retries > 0) {
+                console.log(`Run failed. Retrying... (${retries} retries left)`);
+                await delay(delayMs);
+                return await pollRunStatus(threadId, runId, retries - 1);
+            } else {
+                throw new Error(`Run ${runStatus} after ${maxAttempts} attempts`);
+            }
         }
 
         await delay(delayMs);
@@ -276,9 +282,17 @@ async function sendToAssistantAPI(fileBuffer, fileName, promptText, model) {
 
         if (Array.isArray(finalMessageContent) && finalMessageContent.length > 0 && finalMessageContent[0].type === 'text') {
             let messageText = finalMessageContent[0].text.value;
-            messageText = messageText.replace(/```json|```/g, '').trim(); // Remove markdown code block markers and trim whitespace
+
+            // Remove markdown code block markers and trim whitespace
+            messageText = messageText.replace(/```json|```/g, '').trim(); 
 
             console.log("Cleaned JSON String to be parsed:", messageText);
+
+            // Further clean the JSON string to remove unwanted whitespaces and format issues
+            messageText = messageText.replace(/\n/g, ''); // Remove newlines
+            messageText = messageText.replace(/\s{2,}/g, ' '); // Replace multiple spaces with a single space
+            messageText = messageText.replace(/,(\s+)?}/g, '}'); // Remove trailing commas before closing brace
+            messageText = messageText.replace(/,(\s+)?]/g, ']'); // Remove trailing commas before closing bracket
 
             const jsonObject = JSON.parse(messageText); // Parse the cleaned JSON string
 
