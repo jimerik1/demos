@@ -9,25 +9,15 @@ const sendToAPI = require('./sendToAPI');
 
 require('dotenv').config();
 
-// CORS middleware function
-const allowCors = fn => async (req, res) => {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  // another common pattern
-  // res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-  return await fn(req, res);
+// CORS options
+const corsOptions = {
+  origin: 'https://demos-frontend.vercel.app',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  allowedHeaders: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
 };
 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const storage = multer.memoryStorage();
@@ -140,9 +130,9 @@ const askAIHandler = async (req, res) => {
     }
 };
 
-// Wrap your handlers with allowCors
-app.post('/upload', allowCors(uploadHandler));
-app.post('/ask-ai', allowCors(askAIHandler));
+// Define routes with the handlers
+app.post('/upload', upload.single('file'), uploadHandler);
+app.post('/ask-ai', askAIHandler);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
