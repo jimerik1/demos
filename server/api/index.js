@@ -18,7 +18,7 @@ const upload = multer({ storage: storage });
 const apiKeyOpenAI = process.env.API_KEY;
 console.log(apiKeyOpenAI);
 
-const systemPrompts = JSON.parse(fs.readFileSync('./systemPrompts.json', 'utf8'));
+const systemPrompts = JSON.parse(fs.readFileSync('./api/systemPrompts.json', 'utf8'));
 
 app.post('/upload', upload.single('file'), async (req, res) => {
     console.log("Received request on /upload");

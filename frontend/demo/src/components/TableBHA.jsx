@@ -311,7 +311,7 @@ function TableBHA() {
         formData.append('prompt', selectedPrompt.value); // Use the selected prompt value
 
         try {
-            const response = await fetch('http://localhost:3001/uploadAssistant', {
+            const response = await fetch('http://localhost:3001/api/uploadAssistant', {
                 method: 'POST',
                 body: formData,
             });
