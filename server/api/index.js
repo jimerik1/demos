@@ -9,14 +9,8 @@ const sendToAPI = require('./sendToAPI');
 
 require('dotenv').config();
 
-const corsOptions ={
-    origin:'*', 
-    credentials:true,            //access-control-allow-credentials:true
-    optionSuccessStatus:200,
- }
- 
- app.use(cors(corsOptions)) // Use this after the variable declaration
- app.use(express.json());
+app.use(cors());
+app.use(express.json());
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
