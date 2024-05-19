@@ -9,6 +9,24 @@ const sendToAPI = require('./sendToAPI');
 
 require('dotenv').config();
 
+// CORS middleware function
+const allowCors = fn => async (req, res) => {
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  // another common pattern
+  // res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  return await fn(req, res);
+};
+
 app.use(cors());
 app.use(express.json());
 
@@ -20,7 +38,7 @@ console.log(apiKeyOpenAI);
 
 const systemPrompts = JSON.parse(fs.readFileSync('./api/systemPrompts.json', 'utf8'));
 
-app.post('/upload', upload.single('file'), async (req, res) => {
+const uploadHandler = async (req, res) => {
     console.log("Received request on /upload");
     console.log("Request body:", req.body);
 
@@ -68,9 +86,9 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         console.error("Error processing your request:", error);
         res.status(500).json({ message: "Error processing your request.", error: error.toString() });
     }
-});
+};
 
-app.post('/ask-ai', async (req, res) => {
+const askAIHandler = async (req, res) => {
     console.log("Received request on /ask-ai");
     console.log("Request body:", req.body);
 
@@ -120,7 +138,11 @@ app.post('/ask-ai', async (req, res) => {
         console.error('Error processing the response:', error);
         res.status(500).json({ message: "Error processing your request.", error: error.toString() });
     }
-});
+};
+
+// Wrap your handlers with allowCors
+app.post('/upload', allowCors(uploadHandler));
+app.post('/ask-ai', allowCors(askAIHandler));
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
