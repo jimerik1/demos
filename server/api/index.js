@@ -9,16 +9,14 @@ const sendToAPI = require('./sendToAPI');
 
 require('dotenv').config();
 
-// CORS options
-const corsOptions = {
-  origin: 'https://demos-frontend.vercel.app',
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true,
-  allowedHeaders: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-};
-
-app.use(cors(corsOptions));
-app.use(express.json());
+const corsOptions ={
+    origin:'*', 
+    credentials:true,            //access-control-allow-credentials:true
+    optionSuccessStatus:200,
+ }
+ 
+ app.use(cors(corsOptions)) // Use this after the variable declaration
+ app.use(express.json());
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -28,7 +26,7 @@ console.log(apiKeyOpenAI);
 
 const systemPrompts = JSON.parse(fs.readFileSync('./api/systemPrompts.json', 'utf8'));
 
-const uploadHandler = async (req, res) => {
+app.post('/upload', upload.single('file'), async (req, res) => {
     console.log("Received request on /upload");
     console.log("Request body:", req.body);
 
@@ -76,9 +74,9 @@ const uploadHandler = async (req, res) => {
         console.error("Error processing your request:", error);
         res.status(500).json({ message: "Error processing your request.", error: error.toString() });
     }
-};
+});
 
-const askAIHandler = async (req, res) => {
+app.post('/ask-ai', async (req, res) => {
     console.log("Received request on /ask-ai");
     console.log("Request body:", req.body);
 
@@ -128,11 +126,7 @@ const askAIHandler = async (req, res) => {
         console.error('Error processing the response:', error);
         res.status(500).json({ message: "Error processing your request.", error: error.toString() });
     }
-};
-
-// Define routes with the handlers
-app.post('/upload', upload.single('file'), uploadHandler);
-app.post('/ask-ai', askAIHandler);
+});
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
