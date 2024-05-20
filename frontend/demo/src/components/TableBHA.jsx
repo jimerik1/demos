@@ -266,7 +266,7 @@ function TableBHA() {
         formData.append('modeAI', modeAI); // Use the selected mode AI value
 
         try {
-            const response = await fetch('http://localhost:3001/upload', {
+            const response = await fetch('http://localhost:5001/upload', {
                 method: 'POST',
                 body: formData,
             });
