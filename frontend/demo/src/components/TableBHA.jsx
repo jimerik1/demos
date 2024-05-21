@@ -1,11 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Table, Card, Heading, Icon, Flex, Divider, Button, Grid, Message, Select, Accordion, Text, ProgressBar, Menu, Modal, Dialog, TextArea } from '@oliasoft-open-source/react-ui-library';
+import { 
+    Table, Card, Heading, Icon, Flex, Divider, Button, Grid, Message, Select, 
+    Accordion, Text, ProgressBar, Menu, Modal, Dialog, TextArea 
+} from '@oliasoft-open-source/react-ui-library';
 import Prompts from './Prompts';
 
 function TableBHA() {
+    // Variable Declarations
     const headings = [
         "Component Name", "Length", "Weight", "Grade", 
-        "Body OD", "Body ID", "Connection OD", "Connection ID"
+        "Body OD", "Body ID", "Connection OD", "Connection ID", "Comments"
     ];
 
     const units = ["m", "kg/m"]; // Default units for Length and Weight
@@ -18,7 +22,8 @@ function TableBHA() {
             "Body OD": "5.5",
             "Body ID": "4.778",
             "Connection OD": "7",
-            "Connection ID": "4"
+            "Connection ID": "4",
+            "Comments": ''
         },
         {
             "Component Name": "Casing String",
@@ -28,29 +33,11 @@ function TableBHA() {
             "Body OD": "13.375",
             "Body ID": "12.347",
             "Connection OD": "0",
-            "Connection ID": "0"
+            "Connection ID": "4",
+            "Comments": ''
         }
     ];
 
-    // Filter function to remove unwanted parameters
-    const filterData = (data) => {
-        return data.map(item => {
-            const { "Length Unit": _, "Weight Unit": __, "Body OD Unit": ___, "Comments": ____, ...filteredItem } = item;
-            return filteredItem;
-        });
-    };
-
-    // Set constants
-    const [promptResponse, setPromptResponse] = useState("Response from LLM will be displayed here");
-    const [file, setFile] = useState(null);
-    const [buttonDisabled, setButtonDisabled] = useState(true); // Initializing buttonDisabled as a state variable
-    const [isDragAndDrop, setIsDragAndDrop] = useState(false);
-
-    const [fetchTime, setFetchTime] = useState(0);
-    const [loading, setLoading] = useState(false);
-    const [progress, setProgress] = useState(0);
-    const [currentMessage, setCurrentMessage] = useState("");
-    const [modeAI, setModeAI] = useState("");
     const messages = [
         "Initializing upload", "Initializing upload.", "Initializing upload..", "Initializing upload...",
         "Reading payload", "Reading payload.", "Reading payload..", "Reading payload...",
@@ -89,33 +76,44 @@ function TableBHA() {
         "Very soon now.", "Very soon now..", "Very soon now...",
         "Complete"
       ];
-    
+
+    const [data, setData] = useState(initialData);
+    const [promptResponse, setPromptResponse] = useState("Response from LLM will be displayed here");
+    const [file, setFile] = useState(null);
+    const [buttonDisabled, setButtonDisabled] = useState(true); 
+    const [isDragAndDrop, setIsDragAndDrop] = useState(false);
+    const [fetchTime, setFetchTime] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [currentMessage, setCurrentMessage] = useState("");
+    const [modeAI, setModeAI] = useState("");
+    const [selectedAI, setSelectedAI] = useState(""); 
+    const [selectedPrompt, setSelectedPrompt] = useState({
+        id: '1',
+        text: 'Prompt 1 (default)',
+        value: 'Please extract the following parameters in this document and return a json formatted structure with the data. Only return the json object and nothing else. The document should be something related to a Bottom Hole Assembly (BHA) used in when drilling oil wells. It will consist of many components with unique properties for each component, as well as their own dimensions, lengths etc. Use the following parameter names in the json object: - “Component Name” - Look for a parameter that may be called something like “description” \"name\" something similar to that context, basically the name of each component in the BHA. - \"Length\" - if there is any information about the length of individual components, place that here. - \"Weight\" - look for a parameter that may be called \"weight\" or something similar. - \"Grade\" - If there is any information about a steel property for each component named \"grade\" or something that resembles this, then place it here. - “Body OD” - Look for a parameter that may be called something like “outer diameter” or something similar to that for the string body, or just try to guess based on the data. - \"Body ID\" - Look for a parameter that may be called something like “inner diameter” or something similar to that for the string body, or just try to guess based on the data. - “Connection OD” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches. - “Connection ID” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.  "Comments" - If you have any short comments, display them here. Make sure you get all of the points and always only use a number or empty for all parameters except Component Name which is a string. Always respond with all of the parameters per component even if they are empty. We want to order the json object with drill pipe at the top, so if the data shows components from the bottom up (such as a drill bit or similar as the first component) then return your response with the last component first and then go in that order.'
+    });
+
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [modalInputValue, setModalInputValue] = useState("");
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [currentUnits, setCurrentUnits] = useState(units);
 
     const messageIntervalRef = useRef(null);
     const progressIntervalRef = useRef(null);
+    const fileInputRef = useRef(null);
 
-    //State for modal visibility and input
-    const [isModalVisible, setIsModalVisible] = useState(false);
-    const [modalInputValue, setModalInputValue] = useState("");
+    // Handlers
+    const toggleModal = () => setIsModalVisible(!isModalVisible);
 
-    //Toggle Modal visibility
-    const toggleModal = () => {
-        setIsModalVisible(!isModalVisible);
-    };
+    const handleModalInputChange = (event) => setModalInputValue(event.target.value);
 
-    //Handle modal input change
-    const handleModalInputChange = (event) => {
-        setModalInputValue(event.target.value);
-    };
-
-    //Handle modal execute
     const handleModalExecute = async () => {
         if (!selectedAI) {
             alert('Please select an AI model before executing.');
             return;
         }
 
-        console.log("Executing with input:", modalInputValue);
         setIsModalVisible(false);
         setLoading(true);
         setProgress(0);
@@ -123,27 +121,23 @@ function TableBHA() {
         startMessageInterval();
         startProgressInterval();
 
-        const startTime = Date.now(); // Capture start time
+        const startTime = Date.now();
         try {
             const response = await fetch('http://localhost:3001/ask-ai', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     prompt: modalInputValue,
                     model: selectedAI,
-                    index: "bha"  // Use the appropriate index for the system prompt
+                    index: "bha"
                 })
             });
 
             if (response.ok) {
                 const newData = await response.json();
-                const endTime = Date.now();  // Capture end time
-                setFetchTime((endTime - startTime) / 1000);  // Calculate total time in seconds
-                console.log(newData);  // Log the response to check its structure
-
-                const filteredData = filterData(newData); // Filter the data before setting state
+                const endTime = Date.now();
+                setFetchTime((endTime - startTime) / 1000);
+                const filteredData = filterData(newData);
                 setData(filteredData);
                 setPromptResponse(JSON.stringify(filteredData, null, 2));
             } else {
@@ -154,63 +148,121 @@ function TableBHA() {
             alert('Error sending request to AI.');
         } finally {
             setLoading(false);
-            if (messageIntervalRef.current) clearInterval(messageIntervalRef.current);
-            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+            clearInterval(messageIntervalRef.current);
+            clearInterval(progressIntervalRef.current);
         }
     };
 
-    useEffect(() => {
-        return () => {
-            // Cleanup intervals when component unmounts or loading stops
-            if (messageIntervalRef.current) clearInterval(messageIntervalRef.current);
-            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-        };
-    }, []); // Empty dependency array ensures this runs on mount and unmount only
+    const handleFileChange = (event) => {
+        setFile(event.target.files[0]);
+        setButtonDisabled(false);
+    };
 
-    useEffect(() => {
-        if (isDragAndDrop && file) {
-            handleExecute();
-            setIsDragAndDrop(false);
+    const handleFileUpload = () => fileInputRef.current.click();
+
+    const handleExecute = async () => {
+        if (!file) {
+            alert("Please upload a file first.");
+            return;
         }
-    }, [file, isDragAndDrop]);
 
-    // Adding state for storing the selected AI engine
-    const [selectedAI, setSelectedAI] = useState(""); 
+        const startTime = Date.now();
+        setLoading(true);
+        setProgress(0);
+        setCurrentMessage(messages[0]);
+        startMessageInterval();
+        startProgressInterval();
 
-    // Modify the Select component's onChange handler to update the selectedAI state
-    const handleAIChange = (event) => {
-        setSelectedAI(event.target.value);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('model', selectedAI);
+        formData.append('prompt', selectedPrompt.value);
+        formData.append('modeAI', modeAI);
+
+        try {
+            const response = await fetch('http://localhost:3001/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (response.ok) {
+                const newData = await response.json();
+                const endTime = Date.now();
+                setFetchTime((endTime - startTime) / 1000);
+                const filteredData = filterData(newData);
+                setData(filteredData);
+                setPromptResponse(JSON.stringify(filteredData, null, 2));
+            } else {
+                throw new Error('Network response was not ok');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error sending file.');
+        } finally {
+            setLoading(false);
+            clearInterval(messageIntervalRef.current);
+            clearInterval(progressIntervalRef.current);
+        }
     };
 
-    // modeAI handler
-    const handleModeAI = (event) => {
-        setModeAI(event.target.value);
+    const handleDragOver = (event) => event.preventDefault();
+
+    const handleDrop = (event) => {
+        event.preventDefault();
+        const files = event.dataTransfer.files;
+        if (files.length) {
+            setFile(files[0]);
+            setIsDragAndDrop(true);
+            setButtonDisabled(false);
+            setSelectedAI("gpt-4o");
+            setModeAI("choose");
+            setSelectedPrompt({
+                id: '1',
+                text: 'Prompt 1',
+                details: '(most specified)',
+                value: 'Please extract the following parameters in this document and return a json formatted structure with the data. Only return the json object and nothing else. The document should be something related to a Bottom Hole Assembly (BHA) used in when drilling oil wells. It will consist of many components with unique properties for each component, as well as their own dimensions, lengths etc. Use the following parameter names in the json object: - “Component Name” - Look for a parameter that may be called something like “description” \"name\" something similar to that context, basically the name of each component in the BHA. - \"Length\" - if there is any information about the length of individual components, place that here. - \"Weight\" - look for a parameter that may be called \"weight\" or something similar. - \"Grade\" - If there is any information about a steel property for each component named \"grade\" or something that resembles this, then place it here. - “Body OD” - Look for a parameter that may be called something like “outer diameter” or something similar to that for the string body, or just try to guess based on the data. - \"Body ID\" - Look for a parameter that may be called something like “inner diameter” or something similar to that for the string body, or just try to guess based on the data. - “Connection OD” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches. - “Connection ID” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.  "Comments" - If you have any short comments, display them here. Make sure you get all of the points and always only use a number or empty for all parameters except Component Name which is a string. Always respond with all of the parameters per component even if they are empty. We want to order the json object with drill pipe at the top, so if the data shows components from the bottom up (such as a drill bit or similar as the first component) then return your response with the last component first and then go in that order.'
+            });
+        }
     };
 
-    // Example function that uses the selectedAI state
-    const executeWithAI = () => {
-        console.log("Selected AI engine:", selectedAI);
-        // You can now use selectedAI as an input to any function
+    const toggleAccordion = () => setIsExpanded(!isExpanded);
+
+    const handleAIChange = (event) => setSelectedAI(event.target.value);
+
+    const handleModeAI = (event) => setModeAI(event.target.value);
+
+    const handleUnitToggle = (index) => {
+        let newUnits = [...currentUnits];
+        if (index === 0) {
+            newUnits[0] = currentUnits[0] === "m" ? "ft" : "m";
+        } else if (index === 1) {
+            newUnits[1] = currentUnits[1] === "kg/m" ? "ppf" : "kg/m";
+        }
+        setCurrentUnits(newUnits);
+        setData(data.map(item => ({
+            ...item,
+            "Length": convertUnit(item["Length"], "Length"),
+            "Weight": convertUnit(item["Weight"], "Weight")
+        })));
     };
 
-    const [selectedPrompt, setSelectedPrompt] = useState({
-        id: '1',
-        text: 'Prompt 1 (default)',
-        value: 'Please extract the following parameters in this document and return a json formatted structure with the data. Only return the json object and nothing else.\
-        The document should be something related to a Bottom Hole Assembly (BHA) used in when drilling oil wells. It will consist of many components with unique properties for each component, as well as their own dimensions, lengths etc.\
-        Use the following parameter names in the json object:\
-         - “Component Name”  - Look for a parameter that may be called something like “description” \"name\" something similar to that context, basically the name of each component in the BHA.\
-        - \"Length\" - if there is any information about the length of individual components, place that here.\
-        - \"Weight\" - look for a parameter that may be called \"weight\" or something similar. \
-        - \"Grade\" - If there is any information about a steel property for each component named \"grade\" or something that resembles this, then place it here.\
-        - \“Body OD\” - Look for a parameter that may be called something like “outer diameter” or something similar to that for the string body, or just try to guess based on the data.\
-        - \"Body ID\" - Look for a parameter that may be called something like “inner diameter” or something similar to that for the string body, or just try to guess based on the data.\
-        - \“Connection OD\” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.\
-        - \“Connection ID\” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.\
-        Make sure you get all of the points and always only use a number for all parameters except Component Name which is a string. Always respond with all of the parameters per component even if they are empty. We want to order the json object with drill pipe at the top, so if the data shows components from the bottom up (such as a drill bit or similar as the first component) then return your response with the last component first and then go in that order.'
-    });
+    // Functions
+    const filterData = (data) => {
+        return data.map(item => {
+            const { "Length Unit": _, "Weight Unit": __, "Body OD Unit": ___,  ...filteredItem } = item;
+            return filteredItem;
+        });
+    };
 
-    // Handling Loader (messages)
+    const convertUnit = (value, unitType) => {
+        if (unitType === "Length") {
+            return currentUnits[0] === "m" ? value * 3.28084 : value / 3.28084;
+        } else if (unitType === "Weight") {
+            return currentUnits[1] === "kg/m" ? value * 1.48816 : value / 1.48816;
+        }
+        return value;
+    };
+
     const startMessageInterval = () => {
         let messageIndex = 0;
         messageIntervalRef.current = setInterval(() => {
@@ -223,188 +275,32 @@ function TableBHA() {
         }, 300);
     };
 
-    // Handling Loader (progressbar)
     const startProgressInterval = () => {
         progressIntervalRef.current = setInterval(() => {
             setProgress(prevProgress => {
                 const nextProgress = prevProgress + (100 / 50);
                 if (nextProgress >= 100) {
                     clearInterval(progressIntervalRef.current);
-                    return 100; // Ensure it does not exceed 100
+                    return 100;
                 }
                 return nextProgress;
             });
         }, 500);
     };
 
-    const handleFileChange = (event) => {
-        setFile(event.target.files[0]);
-        setButtonDisabled(false); // Correctly updating the state
-    };
+    useEffect(() => {
+        return () => {
+            clearInterval(messageIntervalRef.current);
+            clearInterval(progressIntervalRef.current);
+        };
+    }, []);
 
-    const handleFileUpload = () => {
-        fileInputRef.current.click();
-    };
-
-    const handleExecute = async () => {
-        if (!file) {
-            alert("Please upload a file first.");
-            return;
+    useEffect(() => {
+        if (isDragAndDrop && file) {
+            handleExecute();
+            setIsDragAndDrop(false);
         }
-
-        const startTime = Date.now(); // Capture start time
-        setLoading(true);
-        setProgress(0);
-        setCurrentMessage(messages[0]);
-        startMessageInterval();
-        startProgressInterval();
-
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('model', selectedAI);
-        formData.append('prompt', selectedPrompt.value); // Use the selected prompt value
-        formData.append('modeAI', modeAI); // Use the selected mode AI value
-
-        try {
-            const response = await fetch('http://localhost:5001/upload', {
-                method: 'POST',
-                body: formData,
-            });
-            if (response.ok) {
-                const newData = await response.json();  // Assuming the response is JSON
-                const endTime = Date.now();  // Capture end time
-                setFetchTime((endTime - startTime) / 1000);  // Calculate total time in seconds
-                console.log(newData);  // Log the response to check its structure
-
-                const filteredData = filterData(newData); // Filter the data before setting state
-                setData(filteredData);
-                setPromptResponse(JSON.stringify(filteredData, null, 2));
-            } else {
-                throw new Error('Network response was not ok');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error sending file.');
-        } finally {
-            setLoading(false);
-            if (messageIntervalRef.current) clearInterval(messageIntervalRef.current);
-            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-        }
-    };
-
-    const handleExecuteAssistant = async () => {
-        if (!file) {
-            alert("Please upload a file first.");
-            return;
-        }
-
-        const startTime = Date.now(); // Capture start time
-        setLoading(true);
-        setProgress(0);
-        setCurrentMessage(messages[0]);
-        startMessageInterval();
-        startProgressInterval();
-
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('model', selectedAI);
-        formData.append('prompt', selectedPrompt.value); // Use the selected prompt value
-
-        try {
-            const response = await fetch('http://localhost:3001/api/uploadAssistant', {
-                method: 'POST',
-                body: formData,
-            });
-            if (response.ok) {
-                const newData = await response.json();  // Assuming the response is JSON
-                const endTime = Date.now();  // Capture end time
-                setFetchTime((endTime - startTime) / 1000);  // Calculate total time in seconds
-                console.log(newData);  // Log the response to check its structure
-
-                const filteredData = filterData(newData); // Filter the data before setting state
-                setData(filteredData);
-                setPromptResponse(JSON.stringify(filteredData, null, 2));
-            } else {
-                throw new Error('Network response was not ok');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error sending file.');
-        } finally {
-            setLoading(false);
-            if (messageIntervalRef.current) clearInterval(messageIntervalRef.current);
-            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-        }
-    };
-
-    const [data, setData] = useState(initialData);
-    const [currentUnits, setCurrentUnits] = useState(units);
-    const fileInputRef = useRef(null);
-
-    // Convert units (meters to feet, kg/m to ppf, etc.)
-    const convertUnit = (value, unitType) => {
-        if (unitType === "Length") {
-            return currentUnits[0] === "m" ? value * 3.28084 : value / 3.28084; // m to ft or vice versa
-        } else if (unitType === "Weight") {
-            return currentUnits[1] === "kg/m" ? value * 1.48816 : value / 1.48816; // kg/m to ppf or vice versa
-        }
-        return value;
-    };
-
-    const handleUnitToggle = (index) => {
-        let newUnits = [...currentUnits];
-        if (index === 0) { // Toggle Length units
-            newUnits[0] = currentUnits[0] === "m" ? "ft" : "m";
-        } else if (index === 1) { // Toggle Weight units
-            newUnits[1] = currentUnits[1] === "kg/m" ? "ppf" : "kg/m";
-        }
-        setCurrentUnits(newUnits);
-        setData(data.map(item => ({
-            ...item,
-            "Length": convertUnit(item["Length"], "Length"),
-            "Weight": convertUnit(item["Weight"], "Weight")
-        })));
-    };
-
-    // Drag and Drop Handlers
-    const handleDragOver = (event) => {
-        event.preventDefault(); // Necessary to allow the drop
-    };
-
-    const handleDrop = (event) => {
-        event.preventDefault();
-        const files = event.dataTransfer.files;
-        if (files.length) {
-            setFile(files[0]);
-            setIsDragAndDrop(true);
-            setButtonDisabled(false);
-            // Set default AI model and prompt
-            setSelectedAI("gpt-4o"); // default set to 'gpt-4o'
-            setModeAI("choose"); //
-            setSelectedPrompt({
-                id: '1',
-                text: 'Prompt 1',
-                details: '(most specified)',
-                value: 'Please extract the following parameters in this document and return a json formatted structure with the data. Only return the json object and nothing else.\
-                The document should be something related to a Bottom Hole Assembly (BHA) used in when drilling oil wells. It will consist of many components with unique properties for each component, as well as their own dimensions, lengths etc.\
-                Use the following parameter names in the json object:\
-                 - “Component Name”  - Look for a parameter that may be called something like “description” \"name\" something similar to that context, basically the name of each component in the BHA.\
-                - \"Length\" - if there is any information about the length of individual components, place that here.\
-                - \"Weight\" - look for a parameter that may be called \"weight\" or something similar. \
-                - \"Grade\" - If there is any information about a steel property for each component named \"grade\" or something that resembles this, then place it here.\
-                - \“Body OD\” - Look for a parameter that may be called something like “outer diameter” or something similar to that for the string body, or just try to guess based on the data.\
-                - \"Body ID\" - Look for a parameter that may be called something like “inner diameter” or something similar to that for the string body, or just try to guess based on the data.\
-                - \“Connection OD\” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.\
-                - \“Connection ID\” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.\
-                Make sure you get all of the points and always only use a number for all parameters except Component Name which is a string. Always respond with all of the parameters per component even if they are empty. We want to order the json object with drill pipe at the top, so if the data shows components from the bottom up (such as a drill bit or similar as the first component) then return your response with the last component first and then go in that order.'
-            });
-        }
-    };
-
-    const [isExpanded, setIsExpanded] = useState(false);
-    const toggleAccordion = () => {
-        setIsExpanded(!isExpanded);
-    };
+    }, [file, isDragAndDrop]);
 
     return (
         <div style={{ width: '80%' }}>
@@ -418,11 +314,10 @@ function TableBHA() {
                         table={{
                             actions: [
                                 {
-                                  childComponent: 
-                                    <Menu menu={{ label: 'Ask the AI', sections: [{ label: 'Ask AI to generate BHA', type: 'Option', onClick: toggleModal }, { label: 'Ask AI to fix existing BHA', type: 'Option' }], small: true, trigger: 'DropDownButton' }} />
+                                    childComponent:
+                                        <Menu menu={{ label: 'Ask the AI', sections: [{ label: 'Ask AI to generate BHA', type: 'Option', onClick: toggleModal }, { label: 'Ask AI to fix existing BHA', type: 'Option' }], small: true, trigger: 'DropDownButton' }} />
                                 }
-                              ],
-                          
+                            ],
                             columnWidths: ['200px', '100px', '100px', 'auto', '100px', '100px', '100px', '100px'],
                             headers: [{
                                 cells: headings.map((heading, index) => ({
@@ -479,9 +374,9 @@ function TableBHA() {
                                 { label: 'GPT 4o', value: 'gpt-4o', details: 'Open AI' },
                                 { label: 'GPT 4 Turbo', value: 'gpt-4-turbo', details: 'Open AI' },
                                 { label: 'GPT 3.5 Turbo', value: 'gpt-3.5-turbo', details: 'Open AI' },
-                                { label: 'Claude 3', value: 'claude3', details: 'Anthropic' },
-                                { label: 'Gemini', value: 'gemini', details: 'Google' },
-                                { label: 'Llama 3', value: 'llama3', details: 'Meta' }
+                                { label: 'Claude 3', value: 'claude3', details: 'Anthropic', disabled: 'true'},
+                                { label: 'Gemini', value: 'gemini', details: 'Google' , disabled: 'true'},
+                                { label: 'Llama 3', value: 'llama3', details: 'Meta', disabled: 'true' }
                             ]}
                             placeholder="Select AI engine"
                             searchable
@@ -494,8 +389,8 @@ function TableBHA() {
                             onChange={handleModeAI}
                             value={modeAI}
                             options={[
-                                { label: 'AI Mode', type: 'Heading'},
-                                { label: 'Choose for me', value: 'choose', details: '(default)'},
+                                { label: 'AI Mode', type: 'Heading' },
+                                { label: 'Choose for me', value: 'choose', details: '(default)' },
                                 { label: 'Normal', value: 'normal' },
                                 { label: 'Assistant', value: 'assistant' },
 
@@ -517,7 +412,7 @@ function TableBHA() {
                     <Grid gap>
                         <Message
                             message={{
-                                content: selectedPrompt.value, // Display the currently selected prompt
+                                content: selectedPrompt.value,
                                 heading: 'This is the instructions (prompt) sent to the LLM',
                                 type: 'Info',
                                 visible: true,
@@ -542,7 +437,7 @@ function TableBHA() {
                 </Accordion>
 
                 <Modal visible={isModalVisible} centered>
-                    <Dialog 
+                    <Dialog
                         dialog={{
                             heading: 'Ask AI to Generate BHA',
                             content: (
@@ -557,7 +452,7 @@ function TableBHA() {
                                 </div>
                             ),
                             onClose: toggleModal
-                        }} 
+                        }}
                     />
                 </Modal>
 
