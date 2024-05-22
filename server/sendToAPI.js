@@ -40,26 +40,18 @@ async function sendToAPI(fileBuffer, promptText, model) {
         console.log(`Received response from OpenAI in ${responseTime} ms`);
 
         if (response.data.choices && response.data.choices.length > 0 && response.data.choices[0].message) {
-            const messageContent = response.data.choices[0].message.content;
+            let messageContent = response.data.choices[0].message.content;
             console.log("OpenAI Response:", messageContent);
 
-            // Debug: Log the string to be parsed
-            console.log("JSON String to be parsed:", messageContent);
-
-            // Extract JSON from formatted message content
-            const jsonStartIndex = messageContent.indexOf('json\n') + 'json\n'.length;
-            let jsonString = messageContent.substring(jsonStartIndex);
-            jsonString = jsonString.replace(/`/g, ''); // Remove backticks if any remain
-            jsonString = jsonString.trim(); // Trim whitespace
-
-            // Debug: Log the string to be parsed
-            console.log("JSON String to be parsed:", jsonString);
+            // Remove any markdown formatting and backticks
+            messageContent = messageContent.replace(/```json|```/g, '').trim();
+            console.log("Formatted JSON String to be parsed:", messageContent);
 
             // Validate and format the JSON string
-            if (jsonString) {
+            if (messageContent) {
                 try {
                     // Parse the JSON string into an object
-                    const jsonObject = JSON.parse(jsonString);
+                    const jsonObject = JSON.parse(messageContent);
 
                     console.log("Parsed JSON Object:", jsonObject); // Log the JSON object
                     return jsonObject;  // Return the JSON object to the frontend

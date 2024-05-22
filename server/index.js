@@ -24,9 +24,9 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     console.log("Received request on /upload");
     console.log("Request body:", req.body);
 
-    if (!req.file || !req.body.model || !req.body.prompt || !req.body.modeAI) {
+    if (!req.file || !req.body.model || !req.body.prompt || !req.body.modeAI || !req.body.vectorStoreId || !req.body.assistantId) {
         console.log("Missing required parameters");
-        return res.status(400).json({ message: "File, model, prompt, and AI Mode are required." });
+        return res.status(400).json({ message: "File, model, prompt, AI Mode, Vector Store ID, and Assistant ID are required." });
     }
 
     console.log("Sending to OpenAI:", { model: req.body.model, prompt: req.body.prompt.length + " chars" });
@@ -40,9 +40,9 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         } else if (req.body.modeAI === 'assistant') {
             const fileBuffer = req.file.buffer;
             const fileName = req.file.originalname;
-            const { model, prompt } = req.body;
+            const { model, prompt, vectorStoreId, assistantId } = req.body;
     
-            const response = await sendToAssistantAPI(fileBuffer, fileName, prompt, model);
+            const response = await sendToAssistantAPI(fileBuffer, fileName, prompt, model, vectorStoreId, assistantId);
             res.json(response);
 
         } else if (req.body.modeAI === 'choose') {
@@ -57,7 +57,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
                 data = await sendToAPI(fileBuffer, req.body.prompt, req.body.model);
             } else {
                 console.log("File is not an image, using sendToAssistantAPI");
-                data = await sendToAssistantAPI(fileBuffer, fileName, req.body.prompt, req.body.model);
+                data = await sendToAssistantAPI(fileBuffer, fileName, req.body.prompt, req.body.model, req.body.vectorStoreId, req.body.assistantId);
             }
         } else {
             throw new Error("Invalid AI Mode");
@@ -70,15 +70,16 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     }
 });
 
+
 app.post('/ask-ai', async (req, res) => {
     console.log("Received request on /ask-ai");
     console.log("Request body:", req.body);
 
-    const { prompt, model, index } = req.body;
+    const { prompt, model, index, vectorStoreId, assistantId } = req.body;
 
-    if (!prompt || !model || !index) {
+    if (!prompt || !model || !index || !vectorStoreId || !assistantId) {
         console.log("Missing required parameters");
-        return res.status(400).json({ message: "Prompt, model, and index are required." });
+        return res.status(400).json({ message: "Prompt, model, index, Vector Store ID, and Assistant ID are required." });
     }
 
     const systemPrompt = systemPrompts[index] || systemPrompts["default"];
@@ -121,6 +122,7 @@ app.post('/ask-ai', async (req, res) => {
         res.status(500).json({ message: "Error processing your request.", error: error.toString() });
     }
 });
+
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

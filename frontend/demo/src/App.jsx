@@ -20,7 +20,7 @@ function App() {
                 </div>
                 <div className="content">
                     <Switch>
-                        <Route exact path="/" component={Main} />
+                        <Route exact path="/" component={Main2} />
                         <Route path="/main2" component={Main2} />
                         <Route path="/main3" component={Main3} />
                         <Route path="/main4" component={Main4} />
