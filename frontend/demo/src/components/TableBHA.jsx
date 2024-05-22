@@ -6,12 +6,10 @@ import {
 import Prompts from './Prompts';
 
 function TableBHA() {
-
     //OPEN AI Vector Store ID and Assistant ID. Must setup a separate one on Open AI for each table.
     const VECTOR_STORE_ID = 'vs_vjFY5WAzigvMqjLWo3WGm8rp';
     const ASSISTANT_ID = 'asst_PWDU6iDMlBEtIFPNpbiVHv0Q';
     const TABLETYPE = "BHA";
-    
 
     // Variable Declarations
     const headings = [
@@ -98,7 +96,7 @@ function TableBHA() {
     const [selectedPrompt, setSelectedPrompt] = useState({
         id: '1',
         text: 'Prompt 1 (default)',
-        value: 'Please extract the following parameters in this document and return a json formatted structure with the data. Only return the json object and nothing else. The document should be something related to a Bottom Hole Assembly (BHA) used in when drilling oil wells. It will consist of many components with unique properties for each component, as well as their own dimensions, lengths etc. Use the following parameter names in the json object: - “Component Name” - Look for a parameter that may be called something like “description” \"name\" something similar to that context, basically the name of each component in the BHA. - \"Length\" - if there is any information about the length of individual components, place that here. - \"Weight\" - look for a parameter that may be called \"weight\" or something similar. - \"Grade\" - If there is any information about a steel property for each component named \"grade\" or something that resembles this, then place it here. - “Body OD” - Look for a parameter that may be called something like “outer diameter” or something similar to that for the string body, or just try to guess based on the data. - \"Body ID\" - Look for a parameter that may be called something like “inner diameter” or something similar to that for the string body, or just try to guess based on the data. - “Connection OD” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches. - “Connection ID” - Look for a parameter that may be called something like “connection outer diameter” or something similar to that for the connection, or just try to guess based on the data. Only return a number and assume it is in inches.  "Comments" - If you have any short comments, display them here. Make sure you get all of the points and always only use a number or empty for all parameters except Component Name which is a string. Always respond with all of the parameters per component even if they are empty. We want to order the json object with drill pipe at the top, so if the data shows components from the bottom up (such as a drill bit or similar as the first component) then return your response with the last component first and then go in that order.'
+        value: 'Please extract the following parameters in this document and return a json formatted structure with the data...'
     });
 
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -139,7 +137,6 @@ function TableBHA() {
                     index: "bha",
                     vectorStoreId: VECTOR_STORE_ID,
                     assistantId: ASSISTANT_ID
-    
                 })
             });
 
@@ -186,11 +183,10 @@ function TableBHA() {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('model', selectedAI);
-        formData.append('prompt', selectedPrompt.value);
+        formData.append('prompt', selectedPrompt.id === 'user-defined' ? modalInputValue : selectedPrompt.value);
         formData.append('modeAI', modeAI);
         formData.append('vectorStoreId', VECTOR_STORE_ID);
         formData.append('assistantId', ASSISTANT_ID);
-    
 
         try {
             const response = await fetch('http://localhost:3001/upload', {
@@ -422,7 +418,7 @@ function TableBHA() {
                             width="auto"
                         />
 
-                <Prompts onSelect={(prompt) => setSelectedPrompt(prompt)} value={selectedPrompt.id} tableType={TABLETYPE} />
+                        <Prompts onSelect={(prompt) => setSelectedPrompt(prompt)} value={selectedPrompt.id} tableType={TABLETYPE} />
 
                         <Select
                             onChange={handleModeAI}
@@ -477,7 +473,7 @@ function TableBHA() {
                 <Modal visible={isModalVisible} centered>
                     <Dialog
                         dialog={{
-                            heading: 'Ask AI to Generate BHA',
+                            heading: 'User Defined Prompt',
                             content: (
                                 <div>
                                     <TextArea value={modalInputValue} onChange={handleModalInputChange} placeholder="Enter your custom prompt here..." />
@@ -486,14 +482,13 @@ function TableBHA() {
                             footer: (
                                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                                     <Button label="Cancel" onClick={toggleModal} />
-                                    <Button label="Execute" onClick={handleModalExecute} />
+                                    <Button label="Save" onClick={() => { setSelectedPrompt({ id: 'user-defined', value: modalInputValue }); toggleModal(); }} />
                                 </div>
                             ),
                             onClose: toggleModal
                         }}
                     />
                 </Modal>
-
             </Card>
         </div>
     );
