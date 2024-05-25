@@ -11,6 +11,34 @@ const DELAY_MS = 2000;
 const RETRIES = 3;
 
 // Handlers
+
+// Extract valid JSON from API Answer. Some times it likes to add text outside JSON.
+function extractJSON(str) {
+    // Regular expression pattern to match JSON objects
+    const jsonPattern = /\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}/g;
+  
+    // Find all JSON objects in the string
+    const matches = str.match(jsonPattern);
+  
+    if (!matches) {
+      return null; // No JSON objects found
+    }
+  
+    // Parse each matched JSON object
+    const jsonObjects = matches.map(match => {
+      try {
+        return JSON.parse(match);
+      } catch (e) {
+        console.log('...failed', e.message);
+        return null;
+      }
+    }).filter(obj => obj !== null); // Remove null values from the array
+  
+    console.log('...found');
+    return jsonObjects;
+  }
+
+
 async function sendToAssistantAPI(fileBuffer, fileName, promptText, model, vectorStoreId, assistantId) {
     console.log("sendToAssistantAPI triggered");
 
@@ -101,13 +129,8 @@ async function sendToAssistantAPI(fileBuffer, fileName, promptText, model, vecto
 
             console.log("Cleaned JSON String to be parsed:", messageText);
 
-            // Further clean the JSON string to remove unwanted whitespaces and format issues
-            messageText = messageText.replace(/\n/g, ''); // Remove newlines
-            messageText = messageText.replace(/\s{2,}/g, ' '); // Replace multiple spaces with a single space
-            messageText = messageText.replace(/,(\s+)?}/g, '}'); // Remove trailing commas before closing brace
-            messageText = messageText.replace(/,(\s+)?]/g, ']'); // Remove trailing commas before closing bracket
-
-            const jsonObject = JSON.parse(messageText); // Parse the cleaned JSON string
+            const jsonObject = extractJSON(messageText);
+            console.log("Extracted version here::", messageText);
 
             console.log("Parsed JSON Object:", jsonObject);
             return jsonObject;
