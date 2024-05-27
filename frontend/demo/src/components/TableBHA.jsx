@@ -87,6 +87,7 @@ function TableBHA() {
     const [file, setFile] = useState(null);
     const [buttonDisabled, setButtonDisabled] = useState(true); 
     const [isDragAndDrop, setIsDragAndDrop] = useState(false);
+    const [feedbackType, setFeedbackType] = useState("Normal");
     const [fetchTime, setFetchTime] = useState(0);
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -233,6 +234,8 @@ function TableBHA() {
     const handleAIChange = (event) => setSelectedAI(event.target.value);
 
     const handleModeAI = (event) => setModeAI(event.target.value);
+
+    const handleFeedbackTypeChange = (event) => setFeedbackType(event.target.value);
 
     const handleUnitChange = (unit, index) => {
         let newUnits = [...currentUnits];
@@ -434,6 +437,20 @@ function TableBHA() {
                             width="auto"
                         />
 
+                            <Select
+                            onChange={handleFeedbackTypeChange}
+                            value={feedbackType}
+                            options={[
+                                { label: 'Feedback Type', type: 'Heading' },
+                                { label: 'Normal', value: 'Normal' },
+                                { label: 'Streaming', value: 'Streaming' }
+                            ]}
+                            placeholder="Select Feedback Type"
+                            searchable
+                            width="auto"
+                        />
+
+
                         <Button
                             colored
                             disabled={buttonDisabled}
@@ -443,7 +460,7 @@ function TableBHA() {
                     </Flex>
                     <Divider />
 
-                    <Grid gap>
+                    <Grid gap> 
                         <Message
                             message={{
                                 content: selectedPrompt.value,
